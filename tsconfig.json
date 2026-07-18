@@ -26,8 +26,10 @@
       "@pages/*": ["src/pages/*"],
       "@hooks/*": ["src/hooks/*"],
       "@utils/*": ["src/utils/*"],
-      "@types/*": ["src/types/*"],
-      "@styles/*": ["src/styles/*"]
+      "@game-types/*": ["src/types/*"],
+      "@styles/*": ["src/styles/*"],
+      "@game/*": ["src/game/*"],
+      "@data/*": ["src/data/*"]
     }
   },
   "include": ["src"],

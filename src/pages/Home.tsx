@@ -1,12 +1,12 @@
-import Header from '@components/Header'
-import Timeline from '@components/Timeline'
+import GameCanvas from '@components/GameCanvas'
+import ProfilePanel from '@components/ProfilePanel'
 import './Home.css'
 
 function Home() {
   return (
     <div className="home">
-      <Header />
-      <Timeline />
+      <GameCanvas />
+      <ProfilePanel />
     </div>
   )
 }

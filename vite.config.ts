@@ -11,8 +11,10 @@ export default defineConfig({
       '@pages': '/src/pages',
       '@hooks': '/src/hooks',
       '@utils': '/src/utils',
-      '@types': '/src/types',
+      '@game-types': '/src/types',
       '@styles': '/src/styles',
+      '@game': '/src/game',
+      '@data': '/src/data',
     },
   },
 })
