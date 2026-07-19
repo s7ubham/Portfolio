@@ -14,6 +14,10 @@ function EndLinksOverlay() {
     }
   }, [])
 
+  const replay = () => {
+    window.location.reload()
+  }
+
   if (!visible) return null
 
   return (
@@ -21,9 +25,12 @@ function EndLinksOverlay() {
       <div className="end-links-window">
         <div className="end-links-header">THE END</div>
         <p className="end-links-title">Thanks for visiting!</p>
-        <p className="end-links-subtitle">Continue the adventure on my profiles:</p>
+        <p className="end-links-subtitle">Replay the battle or continue on my profiles:</p>
 
         <div className="end-links-buttons">
+          <button type="button" className="end-link end-link--replay" onClick={replay}>
+            Replay
+          </button>
           <a
             className="end-link end-link--linkedin"
             href={profile.linkedin.url}

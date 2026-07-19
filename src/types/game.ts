@@ -23,5 +23,12 @@ export const ATTACK_LABELS: Record<AttackType, string> = {
   experience: 'Experience',
 }
 
-export const GAME_WIDTH = 240
-export const GAME_HEIGHT = 160
+/** Logical FireRed size ×2 for sharp text/sprites on large screens */
+export const GAME_SCALE = 2
+export const GAME_WIDTH = 240 * GAME_SCALE
+export const GAME_HEIGHT = 160 * GAME_SCALE
+
+/** Scale a FireRed-native coordinate to current resolution */
+export function s(n: number): number {
+  return n * GAME_SCALE
+}

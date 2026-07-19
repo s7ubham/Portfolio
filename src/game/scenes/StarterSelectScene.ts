@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { GameRegistry } from '@game/GameRegistry'
 import { AudioManager } from '@game/systems/AudioManager'
-import { STARTER_NAMES, type StarterId } from '@game-types/game'
+import { GAME_HEIGHT, GAME_WIDTH, STARTER_NAMES, s, type StarterId } from '@game-types/game'
 
 const STARTERS: StarterId[] = ['charmander', 'squirtle', 'bulbasaur']
 
@@ -27,13 +27,12 @@ export class StarterSelectScene extends Phaser.Scene {
     this.audio.unlock()
     this.audio.ensureBgm()
 
-    this.add.image(120, 80, 'battle-bg').setDisplaySize(240, 160)
-
-    this.add.rectangle(120, 42, 220, 52, 0x101820, 0.45)
+    this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'battle-bg').setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+    this.add.rectangle(GAME_WIDTH / 2, s(42), s(220), s(52), 0x101820, 0.45)
 
     STARTERS.forEach((id, index) => {
-      const x = 50 + index * 70
-      const sprite = this.add.image(x, 46, `starter-${id}-front`).setScale(1.7)
+      const x = s(50 + index * 70)
+      const sprite = this.add.image(x, s(46), `starter-${id}-front`).setScale(1.7)
       sprite.setInteractive({ useHandCursor: true })
       sprite.on('pointerdown', () => {
         this.selectedIndex = index
@@ -43,25 +42,27 @@ export class StarterSelectScene extends Phaser.Scene {
       this.starterSprites.push(sprite)
     })
 
-    this.add.rectangle(120, 122, 220, 56, 0x101820, 0.9)
-    this.add.rectangle(120, 122, 220, 56).setStrokeStyle(2, 0xf8f878)
+    this.add.rectangle(GAME_WIDTH / 2, s(122), s(220), s(56), 0x101820, 0.9)
+    this.add.rectangle(GAME_WIDTH / 2, s(122), s(220), s(56)).setStrokeStyle(2, 0xf8f878)
 
     this.add
-      .text(120, 100, 'CHOOSE YOUR POKEMON', {
+      .text(GAME_WIDTH / 2, s(100), 'CHOOSE YOUR POKEMON', {
         fontFamily: '"Press Start 2P", monospace',
-        fontSize: '6px',
+        fontSize: `${s(7)}px`,
         color: '#f8f878',
+        resolution: 3,
       })
       .setOrigin(0.5)
 
     STARTERS.forEach((id, index) => {
       const text = this.add
-        .text(28, 110 + index * 12, STARTER_NAMES[id], {
+        .text(s(28), s(110 + index * 12), STARTER_NAMES[id], {
           fontFamily: '"Press Start 2P", monospace',
-          fontSize: '7px',
+          fontSize: `${s(8)}px`,
           color: index === 0 ? '#f8f878' : '#f8f8f8',
           stroke: '#101820',
           strokeThickness: 2,
+          resolution: 3,
         })
         .setInteractive({ useHandCursor: true })
         .on('pointerdown', () => {
@@ -73,7 +74,7 @@ export class StarterSelectScene extends Phaser.Scene {
       this.menuTexts.push(text)
     })
 
-    this.cursor = this.add.image(16, 114, 'cursor')
+    this.cursor = this.add.image(s(16), s(114), 'cursor').setScale(2)
 
     this.input.keyboard?.on('keydown', this.handleKeyDown, this)
     this.updateMenu()
@@ -100,12 +101,12 @@ export class StarterSelectScene extends Phaser.Scene {
     this.menuTexts.forEach((text, index) => {
       text.setColor(index === this.selectedIndex ? '#f8f878' : '#f8f8f8')
     })
-    this.cursor.y = 110 + this.selectedIndex * 12 + 4
+    this.cursor.y = s(110 + this.selectedIndex * 12 + 4)
 
     this.starterSprites.forEach((sprite, index) => {
       sprite.setAlpha(index === this.selectedIndex ? 1 : 0.55)
       sprite.setScale(index === this.selectedIndex ? 2 : 1.6)
-      sprite.y = index === this.selectedIndex ? 42 : 46
+      sprite.y = index === this.selectedIndex ? s(42) : s(46)
     })
   }
 
@@ -117,7 +118,19 @@ export class StarterSelectScene extends Phaser.Scene {
     GameRegistry.set({ starterId })
     this.audio.playSelect()
 
-    this.time.delayedCall(450, () => this.scene.start('BattleScene'))
+    this.add
+      .text(GAME_WIDTH / 2, s(78), `Go, ${STARTER_NAMES[starterId]}!`, {
+        fontFamily: '"Press Start 2P", monospace',
+        fontSize: `${s(8)}px`,
+        color: '#f8f878',
+        stroke: '#101820',
+        strokeThickness: 3,
+        resolution: 3,
+      })
+      .setOrigin(0.5)
+
+    // Short beat after choosing a starter before battle begins
+    this.time.delayedCall(1800, () => this.scene.start('BattleScene'))
   }
 
   shutdown(): void {

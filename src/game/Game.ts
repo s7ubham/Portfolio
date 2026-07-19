@@ -23,6 +23,7 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     backgroundColor: '#d8f0e0',
     pixelArt: true,
     roundPixels: true,
+    antialias: false,
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -30,6 +31,12 @@ export function createGame(parent: HTMLElement): Phaser.Game {
       height: GAME_HEIGHT,
       parent,
       expandParent: true,
+      autoRound: true,
+    },
+    render: {
+      pixelArt: true,
+      antialias: false,
+      roundPixels: true,
     },
     scene: [BootScene, NameEntryScene, StarterSelectScene, BattleScene, DefeatScene],
     audio: {

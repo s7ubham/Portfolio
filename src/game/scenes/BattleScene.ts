@@ -7,11 +7,18 @@ import { TypewriterDialog } from '@game/ui/DialogBox'
 import { HPBar } from '@game/ui/HPBar'
 import {
   ATTACK_LABELS,
+  GAME_HEIGHT,
+  GAME_WIDTH,
   STARTER_NAMES,
+  s,
   type AttackType,
 } from '@game-types/game'
 
 type BattlePhase = 'intro' | 'menu' | 'attack' | 'panel' | 'counter' | 'end'
+
+const POST_ATTACK_DELAY_MS = 1600
+const POST_HIT_DELAY_MS = 1800
+const PRE_PANEL_DELAY_MS = 900
 
 export class BattleScene extends Phaser.Scene {
   private battleSystem = new BattleSystem()
@@ -25,8 +32,8 @@ export class BattleScene extends Phaser.Scene {
   private playerSprite!: Phaser.GameObjects.Image
   private enemySprite!: Phaser.GameObjects.Image
   private pendingAttack: AttackType | null = null
-  private panelListener?: (...args: unknown[]) => void
   private menuPanel?: Phaser.GameObjects.Rectangle
+  private handlingPanelClose = false
 
   constructor() {
     super('BattleScene')
@@ -43,69 +50,60 @@ export class BattleScene extends Phaser.Scene {
 
     const { starterId, playerName } = GameRegistry.get()
 
-    this.add.image(120, 80, 'battle-bg').setDisplaySize(240, 160)
+    this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'battle-bg').setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
 
-    // Enemy Pokémon on upper-right grass oval
-    this.enemySprite = this.add.image(168, 52, 'pikachu-front').setScale(1.85)
+    this.enemySprite = this.add.image(s(168), s(52), 'pikachu-front').setScale(1.85)
+    this.playerSprite = this.add.image(s(56), s(108), `starter-${starterId}-back`).setScale(2)
 
-    // Player Pokémon on lower-left grass oval
-    this.playerSprite = this.add
-      .image(56, 108, `starter-${starterId}-back`)
-      .setScale(2)
+    this.add.rectangle(s(62), s(28), s(112), s(34), 0xf8f0d8)
+    this.add.rectangle(s(62), s(28), s(112), s(34)).setStrokeStyle(s(3), 0x585868)
 
-    // FireRed-style beige enemy status box (top-left)
-    this.add.rectangle(62, 28, 112, 34, 0xf8f0d8)
-    this.add.rectangle(62, 28, 112, 34).setStrokeStyle(3, 0x585868)
+    this.add.text(s(16), s(16), 'SUBHAM', {
+      fontFamily: '"Press Start 2P", monospace',
+      fontSize: `${s(7)}px`,
+      color: '#202020',
+      resolution: 3,
+    })
 
-    this.add
-      .text(16, 16, 'SUBHAM', {
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: '6px',
-        color: '#202020',
-      })
+    this.add.text(s(16), s(28), 'PIKACHU', {
+      fontFamily: '"Press Start 2P", monospace',
+      fontSize: `${s(7)}px`,
+      color: '#202020',
+      resolution: 3,
+    })
 
-    this.add
-      .text(16, 26, 'PIKACHU', {
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: '6px',
-        color: '#202020',
-      })
+    this.add.text(s(100), s(28), 'Lv50', {
+      fontFamily: '"Press Start 2P", monospace',
+      fontSize: `${s(7)}px`,
+      color: '#202020',
+      resolution: 3,
+    })
 
-    this.add
-      .text(100, 26, 'Lv50', {
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: '6px',
-        color: '#202020',
-      })
+    this.add.rectangle(s(168), s(88), s(120), s(42), 0xf8f0d8)
+    this.add.rectangle(s(168), s(88), s(120), s(42)).setStrokeStyle(s(3), 0x585868)
 
-    // Player status box (mid-right)
-    this.add.rectangle(168, 88, 120, 42, 0xf8f0d8)
-    this.add.rectangle(168, 88, 120, 42).setStrokeStyle(3, 0x585868)
+    this.add.text(s(116), s(72), playerName.toUpperCase().slice(0, 8), {
+      fontFamily: '"Press Start 2P", monospace',
+      fontSize: `${s(7)}px`,
+      color: '#202020',
+      resolution: 3,
+    })
 
-    this.add
-      .text(116, 72, playerName.toUpperCase().slice(0, 8), {
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: '6px',
-        color: '#202020',
-      })
+    this.add.text(s(116), s(84), STARTER_NAMES[starterId].toUpperCase().slice(0, 10), {
+      fontFamily: '"Press Start 2P", monospace',
+      fontSize: `${s(6)}px`,
+      color: '#202020',
+      resolution: 3,
+    })
 
-    this.add
-      .text(116, 82, STARTER_NAMES[starterId].toUpperCase().slice(0, 10), {
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: '5px',
-        color: '#202020',
-      })
-
-    this.hpBar = new HPBar(this, 168, 98, 78, 'HP')
+    this.hpBar = new HPBar(this, s(168), s(98), s(78), 'HP')
     this.hpBar.setHP(100, false)
 
-    this.dialog = new TypewriterDialog(this, 120, 138, 228, 40)
+    this.dialog = new TypewriterDialog(this, GAME_WIDTH / 2, s(138), s(228), s(40))
 
     this.createAttackMenu()
     this.hideAttackMenu()
-
-    this.panelListener = () => this.onPanelClosed()
-    EventBus.on(GAME_EVENTS.PANEL_CLOSED, this.panelListener)
+    this.handlingPanelClose = false
 
     this.input.keyboard?.on('keydown', this.handleKeyDown, this)
 
@@ -116,8 +114,8 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private createAttackMenu(): void {
-    this.menuPanel = this.add.rectangle(168, 132, 130, 50, 0xf8f8f8)
-    this.menuPanel.setStrokeStyle(3, 0x483878)
+    this.menuPanel = this.add.rectangle(s(168), s(132), s(130), s(50), 0xf8f8f8)
+    this.menuPanel.setStrokeStyle(s(3), 0x483878)
     this.menuPanel.setDepth(5)
 
     const attacks = this.battleSystem.getAvailableAttacks()
@@ -126,10 +124,11 @@ export class BattleScene extends Phaser.Scene {
       const col = index % 2
       const row = Math.floor(index / 2)
       const text = this.add
-        .text(118 + col * 58, 118 + row * 14, ATTACK_LABELS[attack], {
+        .text(s(118 + col * 58), s(118 + row * 14), ATTACK_LABELS[attack], {
           fontFamily: '"Press Start 2P", monospace',
-          fontSize: '6px',
+          fontSize: `${s(7)}px`,
           color: '#202020',
+          resolution: 3,
         })
         .setDepth(6)
         .setInteractive({ useHandCursor: true })
@@ -143,7 +142,7 @@ export class BattleScene extends Phaser.Scene {
       this.menuItems.push(text)
     })
 
-    this.menuCursor = this.add.image(110, 122, 'cursor').setDepth(6)
+    this.menuCursor = this.add.image(s(110), s(122), 'cursor').setScale(2).setDepth(6)
   }
 
   private refreshAttackMenu(): void {
@@ -151,7 +150,6 @@ export class BattleScene extends Phaser.Scene {
     this.menuItems = []
     this.menuCursor?.destroy()
     this.menuPanel?.destroy()
-
     this.createAttackMenu()
     this.selectedMenuIndex = 0
     this.updateMenuCursor()
@@ -159,6 +157,10 @@ export class BattleScene extends Phaser.Scene {
 
   private showAttackMenu(): void {
     this.phase = 'menu'
+    this.handlingPanelClose = false
+    this.input.enabled = true
+    if (this.input.keyboard) this.input.keyboard.enabled = true
+    this.game.canvas.style.pointerEvents = 'auto'
     this.refreshAttackMenu()
     this.menuItems.forEach((item) => item.setVisible(true))
     this.menuCursor.setVisible(true)
@@ -174,7 +176,6 @@ export class BattleScene extends Phaser.Scene {
 
   private handleKeyDown(event: KeyboardEvent): void {
     if (this.phase !== 'menu') return
-
     const attacks = this.battleSystem.getAvailableAttacks()
 
     if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
@@ -193,8 +194,8 @@ export class BattleScene extends Phaser.Scene {
   private updateMenuCursor(): void {
     const col = this.selectedMenuIndex % 2
     const row = Math.floor(this.selectedMenuIndex / 2)
-    this.menuCursor.x = 110 + col * 58
-    this.menuCursor.y = 122 + row * 14
+    this.menuCursor.x = s(110 + col * 58)
+    this.menuCursor.y = s(122 + row * 14)
   }
 
   private selectAttack(): void {
@@ -211,24 +212,26 @@ export class BattleScene extends Phaser.Scene {
 
     const label = ATTACK_LABELS[attackType]
     this.dialog.showMessage(`${GameRegistry.getPlayerName()} used ${label}!`, () => {
-      this.playAttackAnimation(() => this.openProfilePanel(attackType))
+      this.playAttackAnimation(() => {
+        this.time.delayedCall(PRE_PANEL_DELAY_MS, () => this.openProfilePanel(attackType))
+      })
     })
   }
 
   private playAttackAnimation(onComplete: () => void): void {
-    const flash = this.add.image(120, 80, 'flash').setAlpha(0).setScale(2)
+    const flash = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'flash').setAlpha(0).setScale(3)
 
     this.tweens.add({
       targets: this.playerSprite,
-      x: 72,
-      duration: 120,
+      x: s(72),
+      duration: 140,
       yoyo: true,
     })
 
     this.tweens.add({
       targets: flash,
       alpha: 0.6,
-      duration: 100,
+      duration: 120,
       yoyo: true,
       onComplete: () => {
         flash.destroy()
@@ -238,56 +241,72 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private openProfilePanel(attackType: AttackType): void {
+    // Prevent duplicate opens (e.g. dialog callback firing more than once)
+    if (this.phase === 'panel') return
+
     this.phase = 'panel'
+    this.handlingPanelClose = false
+    this.input.enabled = false
+    if (this.input.keyboard) this.input.keyboard.enabled = false
+    this.game.canvas.style.pointerEvents = 'none'
     this.scene.pause()
+
+    EventBus.once(GAME_EVENTS.PANEL_CLOSED, () => this.onPanelClosed())
     EventBus.emit(GAME_EVENTS.SHOW_PROFILE_PANEL, { attackType })
   }
 
   private onPanelClosed(): void {
+    if (this.handlingPanelClose) return
     if (this.phase !== 'panel' || !this.pendingAttack) return
 
+    this.handlingPanelClose = true
     this.scene.resume()
     this.phase = 'counter'
     const attackType = this.pendingAttack
     this.audio.ensureBgm()
 
-    this.dialog.showMessage("Subham's Pikachu used Counter!", () => {
-      this.playCounterAnimation(() => {
-        const newHP = this.battleSystem.applyAttack(attackType)
-        this.hpBar.setHP(newHP)
-        this.audio.playHit()
+    this.time.delayedCall(POST_ATTACK_DELAY_MS, () => {
+      this.dialog.showMessage("Subham's Pikachu used Counter!", () => {
+        this.playCounterAnimation(() => {
+          const newHP = this.battleSystem.applyAttack(attackType)
+          this.hpBar.setHP(newHP)
+          this.audio.playHit()
+          this.cameras.main.flash(220, 255, 64, 64)
 
-        this.cameras.main.flash(200, 255, 64, 64)
-
-        if (this.battleSystem.isDefeated()) {
-          this.time.delayedCall(800, () => {
-            this.phase = 'end'
-            this.scene.start('DefeatScene')
+          this.time.delayedCall(POST_HIT_DELAY_MS, () => {
+            if (this.battleSystem.isDefeated()) {
+              this.phase = 'end'
+              this.dialog.showMessage('Your Pokémon fainted...', () => {
+                this.time.delayedCall(900, () => this.scene.start('DefeatScene'))
+              })
+            } else {
+              this.dialog.showMessage('The attack was super effective!', () => {
+                this.time.delayedCall(700, () => {
+                  this.pendingAttack = null
+                  this.showAttackMenu()
+                })
+              })
+            }
           })
-        } else {
-          this.dialog.showMessage('The attack was super effective!', () => {
-            this.pendingAttack = null
-            this.showAttackMenu()
-          })
-        }
+        })
       })
     })
   }
 
   private playCounterAnimation(onComplete: () => void): void {
-    const flash = this.add.image(168, 52, 'flash').setAlpha(0)
+    const flash = this.add.image(s(168), s(52), 'flash').setAlpha(0).setScale(2)
 
     this.tweens.add({
       targets: this.enemySprite,
-      x: 148,
-      duration: 120,
+      x: s(148),
+      duration: 140,
       yoyo: true,
     })
 
     this.tweens.add({
       targets: flash,
       alpha: 0.8,
-      duration: 100,
+      duration: 120,
       yoyo: true,
       onComplete: () => {
         flash.destroy()
@@ -297,9 +316,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   shutdown(): void {
-    if (this.panelListener) {
-      EventBus.off(GAME_EVENTS.PANEL_CLOSED, this.panelListener)
-    }
+    EventBus.off(GAME_EVENTS.PANEL_CLOSED)
     this.input.keyboard?.off('keydown', this.handleKeyDown, this)
   }
 }

@@ -18,6 +18,8 @@
     8px 8px 0 rgba(0, 0, 0, 0.45);
   font-family: 'Press Start 2P', monospace;
   padding: 16px 12px 14px;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
 }
 
 .name-entry-header {

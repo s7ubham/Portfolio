@@ -3,7 +3,7 @@ import { EventBus, GAME_EVENTS } from '@game/EventBus'
 import { GameRegistry } from '@game/GameRegistry'
 import { AudioManager } from '@game/systems/AudioManager'
 import { TypewriterDialog } from '@game/ui/DialogBox'
-import { STARTER_NAMES } from '@game-types/game'
+import { GAME_HEIGHT, GAME_WIDTH, STARTER_NAMES, s } from '@game-types/game'
 
 export class DefeatScene extends Phaser.Scene {
   private dialog!: TypewriterDialog
@@ -21,17 +21,20 @@ export class DefeatScene extends Phaser.Scene {
     this.audio = new AudioManager(this)
     this.audio.stopBgm()
 
-    this.add.image(120, 80, 'battle-bg').setDisplaySize(240, 160).setTint(0x888888)
+    this.add
+      .image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'battle-bg')
+      .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+      .setTint(0x888888)
 
     this.playerSprite = this.add
-      .image(56, 102, `starter-${starterId}-back`)
+      .image(s(56), s(102), `starter-${starterId}-back`)
       .setScale(1.9)
       .setAlpha(0.6)
 
-    this.pokeball = this.add.image(56, 56, 'pokeball').setScale(1.5).setVisible(false)
-    this.sparkle = this.add.image(56, 102, 'sparkle').setVisible(false)
+    this.pokeball = this.add.image(s(56), s(56), 'pokeball').setScale(2).setVisible(false)
+    this.sparkle = this.add.image(s(56), s(102), 'sparkle').setScale(2).setVisible(false)
 
-    this.dialog = new TypewriterDialog(this, 120, 132, 220, 36)
+    this.dialog = new TypewriterDialog(this, GAME_WIDTH / 2, s(132), s(220), s(36))
 
     this.dialog.showMessage(`${playerName} has no more Pokémon!`, () => {
       this.dialog.showMessage('You have been defeated!', () => {
@@ -46,14 +49,14 @@ export class DefeatScene extends Phaser.Scene {
 
     this.tweens.add({
       targets: this.pokeball,
-      y: 102,
-      duration: 400,
+      y: s(102),
+      duration: 450,
       ease: 'Quad.easeIn',
       onComplete: () => {
         this.tweens.add({
           targets: this.pokeball,
           angle: 360,
-          duration: 600,
+          duration: 650,
           onComplete: () => {
             this.playerSprite.setVisible(false)
             this.sparkle.setVisible(true)
@@ -61,8 +64,8 @@ export class DefeatScene extends Phaser.Scene {
             this.tweens.add({
               targets: this.sparkle,
               alpha: { from: 1, to: 0 },
-              scale: { from: 1, to: 2 },
-              duration: 800,
+              scale: { from: 2, to: 3.5 },
+              duration: 900,
               onComplete: () => this.showFinalMessage(),
             })
           },
@@ -79,12 +82,13 @@ export class DefeatScene extends Phaser.Scene {
       () => {
         this.dialog.showMessage("Thanks for visiting Subham's portfolio!", () => {
           const endText = this.add
-            .text(120, 70, 'THE END', {
+            .text(GAME_WIDTH / 2, s(70), 'THE END', {
               fontFamily: '"Press Start 2P", monospace',
-              fontSize: '16px',
+              fontSize: `${s(18)}px`,
               color: '#f8f878',
               stroke: '#202020',
-              strokeThickness: 4,
+              strokeThickness: s(4),
+              resolution: 3,
             })
             .setOrigin(0.5)
             .setAlpha(0)

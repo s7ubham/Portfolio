@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import { EventBus, GAME_EVENTS, type NameConfirmedEvent } from '@game/EventBus'
 import { GameRegistry } from '@game/GameRegistry'
 import { AudioManager } from '@game/systems/AudioManager'
+import { GAME_HEIGHT, GAME_WIDTH, s } from '@game-types/game'
 
 export class NameEntryScene extends Phaser.Scene {
   private audio!: AudioManager
@@ -15,16 +16,17 @@ export class NameEntryScene extends Phaser.Scene {
     GameRegistry.reset()
     this.audio = new AudioManager(this)
 
-    this.add.image(120, 80, 'battle-bg').setDisplaySize(240, 160)
-    this.add.rectangle(120, 80, 240, 160, 0x000000, 0.35)
+    this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'battle-bg').setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.35)
 
     this.add
-      .text(120, 72, "ENTER YOUR NAME", {
+      .text(GAME_WIDTH / 2, s(72), 'ENTER YOUR NAME', {
         fontFamily: '"Press Start 2P", monospace',
-        fontSize: '8px',
+        fontSize: `${s(10)}px`,
         color: '#f8f878',
         stroke: '#202020',
-        strokeThickness: 3,
+        strokeThickness: s(4),
+        resolution: 3,
       })
       .setOrigin(0.5)
 

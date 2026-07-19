@@ -214,26 +214,24 @@ function drawEllipse(canvas, cx, cy, rx, ry, color) {
 }
 
 function drawBattleBackground(filepath) {
-  // FireRed-style soft seafoam horizontal stripes + grass ovals
-  const c = createCanvas(240, 160)
+  // FireRed-style soft seafoam horizontal stripes + grass ovals (2x res)
+  const c = createCanvas(480, 320)
   const stripeA = [216, 240, 224, 255]
   const stripeB = [248, 252, 248, 255]
-  const stripeHeight = 3
+  const stripeHeight = 6
 
-  for (let y = 0; y < 160; y++) {
+  for (let y = 0; y < 320; y++) {
     const band = Math.floor(y / stripeHeight) % 2 === 0 ? stripeA : stripeB
-    c.fillRect(0, y, 240, 1, band)
+    c.fillRect(0, y, 480, 1, band)
   }
 
-  // Enemy grass platform (upper-right)
-  drawEllipse(c, 168, 68, 54, 16, [88, 176, 96, 255])
-  drawEllipse(c, 168, 66, 48, 12, [120, 200, 120, 255])
-  drawEllipse(c, 168, 64, 34, 7, [72, 152, 80, 255])
+  drawEllipse(c, 336, 136, 108, 32, [88, 176, 96, 255])
+  drawEllipse(c, 336, 132, 96, 24, [120, 200, 120, 255])
+  drawEllipse(c, 336, 128, 68, 14, [72, 152, 80, 255])
 
-  // Player grass platform (lower-left)
-  drawEllipse(c, 64, 124, 62, 18, [88, 176, 96, 255])
-  drawEllipse(c, 64, 122, 54, 13, [120, 200, 120, 255])
-  drawEllipse(c, 64, 120, 38, 8, [72, 152, 80, 255])
+  drawEllipse(c, 128, 248, 124, 36, [88, 176, 96, 255])
+  drawEllipse(c, 128, 244, 108, 26, [120, 200, 120, 255])
+  drawEllipse(c, 128, 240, 76, 16, [72, 152, 80, 255])
 
   c.toPng(filepath)
 }

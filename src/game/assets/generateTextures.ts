@@ -35,23 +35,25 @@ export function generateGameTextures(scene: Phaser.Scene): void {
 
 function generateBattleBackground(scene: Phaser.Scene): void {
   const g = scene.make.graphics({ x: 0, y: 0 })
+  const w = 480
+  const h = 320
 
-  for (let y = 0; y < 160; y++) {
-    const band = Math.floor(y / 3) % 2 === 0
+  for (let y = 0; y < h; y++) {
+    const band = Math.floor(y / 6) % 2 === 0
     g.fillStyle(band ? 0xd8f0e0 : 0xf8fcf8, 1)
-    g.fillRect(0, y, 240, 1)
+    g.fillRect(0, y, w, 1)
   }
 
   g.fillStyle(0x58b060, 1)
-  g.fillEllipse(168, 68, 108, 32)
+  g.fillEllipse(336, 136, 216, 64)
   g.fillStyle(0x78c878, 1)
-  g.fillEllipse(168, 66, 96, 24)
+  g.fillEllipse(336, 132, 192, 48)
   g.fillStyle(0x58b060, 1)
-  g.fillEllipse(64, 124, 124, 36)
+  g.fillEllipse(128, 248, 248, 72)
   g.fillStyle(0x78c878, 1)
-  g.fillEllipse(64, 122, 108, 26)
+  g.fillEllipse(128, 244, 216, 52)
 
-  g.generateTexture('battle-bg', 240, 160)
+  g.generateTexture('battle-bg', w, h)
   g.destroy()
 }
 

@@ -19,24 +19,25 @@
   font-family: 'Press Start 2P', monospace;
   padding: 24px 18px;
   text-align: center;
+  -webkit-font-smoothing: none;
 }
 
 .end-links-header {
-  font-size: 18px;
+  font-size: clamp(16px, 4vw, 22px);
   color: #f85858;
   margin-bottom: 14px;
   text-shadow: 2px 2px 0 #202020;
 }
 
 .end-links-title {
-  font-size: 10px;
+  font-size: clamp(9px, 2.2vw, 11px);
   color: #202020;
   margin-bottom: 10px;
   line-height: 1.6;
 }
 
 .end-links-subtitle {
-  font-size: 8px;
+  font-size: clamp(7px, 1.8vw, 8px);
   color: #505868;
   margin-bottom: 20px;
   line-height: 1.7;
@@ -50,18 +51,27 @@
 
 .end-link {
   display: block;
+  width: 100%;
   padding: 14px 12px;
   text-decoration: none;
-  font-size: 10px;
+  font-size: clamp(9px, 2.2vw, 11px);
   color: #f8f8f8;
   border: 3px solid #202020;
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
   touch-action: manipulation;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: center;
 }
 
 .end-link:active {
   transform: translate(1px, 1px);
   box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.end-link--replay {
+  background: #58d058;
+  color: #102010;
 }
 
 .end-link--linkedin {

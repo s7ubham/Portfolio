@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { s } from '@game-types/game'
 
 export class HPBar {
   private scene: Phaser.Scene
@@ -15,17 +16,20 @@ export class HPBar {
     labelText: string,
   ) {
     this.scene = scene
-    this.maxWidth = width - 4
+    this.maxWidth = width - s(4)
 
-    const label = scene.add.text(-width / 2, -8, labelText, {
+    const label = scene.add.text(-width / 2, -s(8), labelText, {
       fontFamily: '"Press Start 2P", monospace',
-      fontSize: '5px',
+      fontSize: `${s(5)}px`,
       color: '#e05050',
+      resolution: 3,
     })
 
-    const frame = scene.add.rectangle(8, 0, width, 8, 0x404040)
-    const inner = scene.add.rectangle(8, 0, width - 2, 5, 0xf8f8f8)
-    this.fill = scene.add.rectangle(8 - this.maxWidth / 2, 0, this.maxWidth, 4, 0x58d058).setOrigin(0, 0.5)
+    const frame = scene.add.rectangle(s(8), 0, width, s(8), 0x404040)
+    const inner = scene.add.rectangle(s(8), 0, width - s(2), s(5), 0xf8f8f8)
+    this.fill = scene.add
+      .rectangle(s(8) - this.maxWidth / 2, 0, this.maxWidth, s(4), 0x58d058)
+      .setOrigin(0, 0.5)
 
     this.container = scene.add.container(x, y, [label, frame, inner, this.fill])
     this.updateColor()
@@ -39,7 +43,7 @@ export class HPBar {
       this.scene.tweens.add({
         targets: this.fill,
         width: targetWidth,
-        duration: 500,
+        duration: 600,
         ease: 'Quad.easeOut',
         onUpdate: () => this.updateColor(),
       })

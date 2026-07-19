@@ -25,13 +25,8 @@ export class BattleSystem {
     }
 
     this.usedAttacks.add(type)
-
-    if (type === 'experience') {
-      this.playerHP = 0
-    } else {
-      this.playerHP = Math.max(0, this.playerHP - SEGMENT_DAMAGE)
-    }
-
+    // Every attack (DSA / Projects / Experience) removes exactly one-third HP
+    this.playerHP = Math.max(0, this.playerHP - SEGMENT_DAMAGE)
     return this.playerHP
   }
 
