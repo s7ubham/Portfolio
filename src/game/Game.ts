@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { BootScene } from '@game/scenes/BootScene'
+import { WelcomeScene } from '@game/scenes/WelcomeScene'
 import { NameEntryScene } from '@game/scenes/NameEntryScene'
 import { StarterSelectScene } from '@game/scenes/StarterSelectScene'
 import { BattleScene } from '@game/scenes/BattleScene'
@@ -38,7 +39,7 @@ export function createGame(parent: HTMLElement): Phaser.Game {
       antialias: false,
       roundPixels: true,
     },
-    scene: [BootScene, NameEntryScene, StarterSelectScene, BattleScene, DefeatScene],
+    scene: [BootScene, WelcomeScene, NameEntryScene, StarterSelectScene, BattleScene, DefeatScene],
     audio: {
       disableWebAudio: false,
     },

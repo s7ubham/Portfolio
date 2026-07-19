@@ -1,37 +1,54 @@
 .name-entry-overlay {
   position: fixed;
   inset: 0;
+  width: var(--app-w, 100vw);
+  height: var(--app-h, 100dvh);
   z-index: 1100;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.82);
-  padding: 12px;
+  padding:
+    max(calc(var(--app-h, 100dvh) * 0.015), env(safe-area-inset-top))
+    max(calc(var(--app-w, 100vw) * 0.02), env(safe-area-inset-right))
+    max(calc(var(--app-h, 100dvh) * 0.015), env(safe-area-inset-bottom))
+    max(calc(var(--app-w, 100vw) * 0.02), env(safe-area-inset-left));
+  box-sizing: border-box;
 }
 
 .name-entry-window {
-  width: min(420px, 96vw);
+  /* Size from the live device viewport */
+  width: min(calc(var(--app-w, 100vw) * 0.94), 560px);
+  max-height: calc(var(--app-h, 100dvh) * 0.94);
+  overflow: auto;
   background: #f4f0e0;
   border: 4px solid #202020;
   box-shadow:
     0 0 0 3px #6890f0,
     8px 8px 0 rgba(0, 0, 0, 0.45);
   font-family: 'Press Start 2P', monospace;
-  padding: 16px 12px 14px;
+  padding:
+    calc(var(--app-h, 100dvh) * 0.018)
+    calc(var(--app-w, 100vw) * 0.02)
+    calc(var(--app-h, 100dvh) * 0.016);
   -webkit-font-smoothing: none;
   font-smooth: never;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .name-entry-header {
   text-align: center;
-  font-size: 11px;
+  font-size: clamp(10px, calc(var(--app-w, 100vw) * 0.028), 13px);
   color: #202020;
-  margin-bottom: 14px;
+  margin-bottom: calc(var(--app-h, 100dvh) * 0.016);
   line-height: 1.6;
+  flex-shrink: 0;
 }
 
 .name-entry-display {
-  min-height: 44px;
+  min-height: clamp(40px, calc(var(--app-h, 100dvh) * 0.07), 56px);
   background: #202830;
   border: 3px solid #101418;
   color: #f8f878;
@@ -39,16 +56,17 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  font-size: 14px;
+  font-size: clamp(12px, calc(var(--app-w, 100vw) * 0.035), 18px);
   letter-spacing: 2px;
-  margin-bottom: 10px;
-  padding: 10px;
+  margin-bottom: calc(var(--app-h, 100dvh) * 0.012);
+  padding: calc(var(--app-h, 100dvh) * 0.012) calc(var(--app-w, 100vw) * 0.02);
   box-shadow: inset 0 0 0 2px #405060;
+  flex-shrink: 0;
 }
 
 .name-entry-placeholder {
   color: #8898a8;
-  font-size: 9px;
+  font-size: clamp(8px, calc(var(--app-w, 100vw) * 0.024), 11px);
   letter-spacing: 1px;
 }
 
@@ -66,35 +84,43 @@
 .name-entry-error {
   text-align: center;
   color: #f85858;
-  font-size: 8px;
-  margin-bottom: 10px;
+  font-size: clamp(7px, calc(var(--app-w, 100vw) * 0.022), 10px);
+  margin-bottom: calc(var(--app-h, 100dvh) * 0.01);
+  flex-shrink: 0;
 }
 
 .name-entry-keyboard {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: clamp(4px, calc(var(--app-h, 100dvh) * 0.01), 10px);
+  width: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .name-entry-row {
   display: flex;
   justify-content: center;
-  gap: 4px;
-  flex-wrap: wrap;
+  gap: clamp(3px, calc(var(--app-w, 100vw) * 0.01), 8px);
+  width: 100%;
 }
 
 .name-entry-key {
-  min-width: 32px;
-  min-height: 40px;
-  padding: 8px 6px;
+  /* Share each row evenly → width tracks device width */
+  flex: 1 1 0;
+  min-width: 0;
+  /* Height tracks device height */
+  height: clamp(40px, calc(var(--app-h, 100dvh) * 0.075), 64px);
+  padding: 0;
   background: #6890f0;
   border: 2px solid #203868;
   color: #f8f8f8;
   font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
+  font-size: clamp(9px, calc(var(--app-w, 100vw) * 0.026), 12px);
   cursor: pointer;
   box-shadow: 2px 2px 0 #203868;
   touch-action: manipulation;
+  user-select: none;
 }
 
 .name-entry-key:active {
@@ -103,33 +129,50 @@
 }
 
 .name-entry-key--wide {
-  min-width: 72px;
+  flex: 1.4 1 0;
   background: #787878;
   border-color: #404040;
   box-shadow: 2px 2px 0 #404040;
-  font-size: 8px;
+  font-size: clamp(8px, calc(var(--app-w, 100vw) * 0.022), 10px);
 }
 
 .name-entry-key--ok {
-  min-width: 72px;
+  flex: 1.4 1 0;
   background: #58d058;
   border-color: #307030;
   box-shadow: 2px 2px 0 #307030;
-  font-size: 10px;
+  font-size: clamp(10px, calc(var(--app-w, 100vw) * 0.028), 13px);
 }
 
-@media (max-width: 420px) {
+.name-entry-row--actions .name-entry-key {
+  height: clamp(44px, calc(var(--app-h, 100dvh) * 0.085), 68px);
+}
+
+/* Short phones: tighten so keyboard still fits */
+@media (max-height: 560px) {
   .name-entry-key {
-    min-width: 28px;
-    min-height: 38px;
-    font-size: 9px;
+    height: clamp(34px, calc(var(--app-h, 100dvh) * 0.09), 48px);
   }
 
-  .name-entry-header {
-    font-size: 9px;
+  .name-entry-row--actions .name-entry-key {
+    height: clamp(38px, calc(var(--app-h, 100dvh) * 0.1), 52px);
   }
 
   .name-entry-display {
-    font-size: 12px;
+    min-height: clamp(34px, calc(var(--app-h, 100dvh) * 0.08), 44px);
+  }
+}
+
+/* Landscape phones */
+@media (orientation: landscape) and (max-height: 500px) {
+  .name-entry-window {
+    width: min(calc(var(--app-w, 100vw) * 0.88), 720px);
+    max-height: calc(var(--app-h, 100dvh) * 0.96);
+    padding: calc(var(--app-h, 100dvh) * 0.02) calc(var(--app-w, 100vw) * 0.02);
+  }
+
+  .name-entry-key,
+  .name-entry-row--actions .name-entry-key {
+    height: clamp(30px, calc(var(--app-h, 100dvh) * 0.14), 44px);
   }
 }

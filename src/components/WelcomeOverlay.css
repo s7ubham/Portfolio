@@ -1,0 +1,121 @@
+.welcome-overlay {
+  position: fixed;
+  inset: 0;
+  width: var(--app-w, 100vw);
+  height: var(--app-h, 100dvh);
+  z-index: 1150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    max(calc(var(--app-h, 100dvh) * 0.02), env(safe-area-inset-top))
+    max(calc(var(--app-w, 100vw) * 0.03), env(safe-area-inset-right))
+    max(calc(var(--app-h, 100dvh) * 0.02), env(safe-area-inset-bottom))
+    max(calc(var(--app-w, 100vw) * 0.03), env(safe-area-inset-left));
+  box-sizing: border-box;
+  background:
+    radial-gradient(circle at top, rgba(104, 144, 240, 0.35), transparent 45%),
+    rgba(0, 0, 0, 0.78);
+}
+
+.welcome-window {
+  width: min(calc(var(--app-w, 100vw) * 0.92), 480px);
+  max-height: calc(var(--app-h, 100dvh) * 0.9);
+  overflow: auto;
+  background: #f4f0e0;
+  border: 4px solid #202020;
+  box-shadow:
+    0 0 0 3px #f8f878,
+    8px 8px 0 rgba(0, 0, 0, 0.4);
+  padding:
+    clamp(16px, calc(var(--app-h, 100dvh) * 0.04), 32px)
+    clamp(14px, calc(var(--app-w, 100vw) * 0.05), 28px);
+  text-align: center;
+  font-family: 'Press Start 2P', monospace;
+  -webkit-font-smoothing: none;
+  animation: welcome-pop 0.45s ease both;
+  box-sizing: border-box;
+}
+
+@keyframes welcome-pop {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.welcome-eyebrow {
+  font-size: clamp(8px, calc(var(--app-w, 100vw) * 0.022), 10px);
+  color: #6890f0;
+  margin-bottom: calc(var(--app-h, 100dvh) * 0.015);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.welcome-title {
+  font-size: clamp(20px, calc(var(--app-w, 100vw) * 0.08), 34px);
+  color: #f85858;
+  margin-bottom: calc(var(--app-h, 100dvh) * 0.015);
+  text-shadow: 3px 3px 0 #202020;
+  line-height: 1.2;
+}
+
+.welcome-brand {
+  font-size: clamp(10px, calc(var(--app-w, 100vw) * 0.032), 13px);
+  color: #202020;
+  margin-bottom: calc(var(--app-h, 100dvh) * 0.02);
+  line-height: 1.5;
+}
+
+.welcome-copy {
+  font-size: clamp(8px, calc(var(--app-w, 100vw) * 0.024), 10px);
+  color: #505868;
+  line-height: 1.8;
+  margin-bottom: calc(var(--app-h, 100dvh) * 0.025);
+}
+
+.welcome-stars {
+  display: flex;
+  justify-content: center;
+  gap: clamp(8px, calc(var(--app-w, 100vw) * 0.025), 14px);
+  color: #f8f878;
+  font-size: clamp(14px, calc(var(--app-w, 100vw) * 0.04), 18px);
+  margin-bottom: calc(var(--app-h, 100dvh) * 0.028);
+  animation: welcome-blink 1.2s steps(1) infinite;
+}
+
+@keyframes welcome-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.welcome-start {
+  width: 100%;
+  min-height: clamp(48px, calc(var(--app-h, 100dvh) * 0.075), 60px);
+  padding: calc(var(--app-h, 100dvh) * 0.018) calc(var(--app-w, 100vw) * 0.03);
+  border: 3px solid #307030;
+  background: #58d058;
+  color: #102010;
+  font-family: inherit;
+  font-size: clamp(11px, calc(var(--app-w, 100vw) * 0.032), 14px);
+  cursor: pointer;
+  box-shadow: 4px 4px 0 #204020;
+  touch-action: manipulation;
+}
+
+.welcome-start:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #204020;
+}
+
+.welcome-hint {
+  margin-top: calc(var(--app-h, 100dvh) * 0.018);
+  font-size: clamp(7px, calc(var(--app-w, 100vw) * 0.02), 8px);
+  color: #787878;
+  line-height: 1.6;
+}

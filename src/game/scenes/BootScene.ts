@@ -19,7 +19,7 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     generateGameTextures(this)
     applyExternalAssetsIfLoaded(this)
-    this.scene.start('NameEntryScene')
+    this.scene.start('WelcomeScene')
   }
 
   private createLoadingBar(): void {
