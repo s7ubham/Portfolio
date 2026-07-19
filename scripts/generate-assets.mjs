@@ -45,7 +45,7 @@ function writeWav(filepath, frequency, durationSec, volume = 0.25) {
 
 function writeBattleBgm(filepath) {
   const sampleRate = 22050
-  const durationSec = 8
+  const durationSec = 10
   const numSamples = Math.floor(sampleRate * durationSec)
   const dataSize = numSamples * 2
   const buffer = Buffer.alloc(44 + dataSize)
@@ -64,15 +64,23 @@ function writeBattleBgm(filepath) {
   buffer.write('data', 36)
   buffer.writeUInt32LE(dataSize, 40)
 
-  const melody = [262, 294, 330, 349, 392, 440, 392, 349, 330, 294, 262, 220]
+  // Short chiptune-style battle loop (louder + square-ish tones)
+  const melody = [392, 440, 494, 523, 494, 440, 392, 349, 330, 349, 392, 440]
+  const bassLine = [196, 196, 220, 220, 175, 175, 196, 196]
 
   for (let i = 0; i < numSamples; i++) {
     const t = i / sampleRate
-    const noteIndex = Math.floor(t * 1.5) % melody.length
+    const noteIndex = Math.floor(t * 2.5) % melody.length
+    const bassIndex = Math.floor(t * 2.5) % bassLine.length
     const freq = melody[noteIndex]
-    const bass = Math.sin(2 * Math.PI * (freq / 2) * t) * 0.06
-    const lead = Math.sin(2 * Math.PI * freq * t) * 0.1
-    const sample = (bass + lead) * 32767
+    const bassFreq = bassLine[bassIndex]
+
+    const leadPhase = 2 * Math.PI * freq * t
+    const bassPhase = 2 * Math.PI * bassFreq * t
+    const square = Math.sin(leadPhase) > 0 ? 1 : -1
+    const bass = Math.sin(bassPhase) * 0.22
+    const lead = square * 0.18
+    const sample = (bass + lead) * 32767 * 0.9
     buffer.writeInt16LE(Math.max(-32768, Math.min(32767, Math.floor(sample))), 44 + i * 2)
   }
 
@@ -136,43 +144,63 @@ function createCanvas(width, height) {
       ihdr.writeUInt32BE(height, 4)
       ihdr[8] = 8
       ihdr[9] = 6
-      ihdr[10] = 0
-      ihdr[11] = 0
-      ihdr[12] = 0
 
       const compressed = zlib.deflateSync(raw)
       const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
-      const png = Buffer.concat([
-        signature,
-        pngChunk('IHDR', ihdr),
-        pngChunk('IDAT', compressed),
-        pngChunk('IEND', Buffer.alloc(0)),
-      ])
-      fs.writeFileSync(filepath, png)
+      fs.writeFileSync(
+        filepath,
+        Buffer.concat([
+          signature,
+          pngChunk('IHDR', ihdr),
+          pngChunk('IDAT', compressed),
+          pngChunk('IEND', Buffer.alloc(0)),
+        ]),
+      )
     },
   }
 }
 
-const C = {
-  black: [32, 32, 32, 255],
-  white: [248, 248, 248, 255],
-  cream: [248, 224, 160, 255],
-  orange: [248, 120, 48, 255],
-  orangeDark: [200, 72, 32, 255],
-  blue: [104, 144, 240, 255],
-  blueDark: [56, 88, 176, 255],
-  green: [120, 200, 80, 255],
-  greenDark: [64, 136, 48, 255],
-  yellow: [248, 208, 48, 255],
-  yellowDark: [200, 152, 32, 255],
-  red: [248, 88, 88, 255],
-  pink: [248, 160, 160, 255],
-  brown: [160, 112, 64, 255],
-  skin: [248, 192, 152, 255],
-  navy: [48, 80, 168, 255],
-  flame1: [248, 200, 48, 255],
-  flame2: [248, 120, 32, 255],
-  flame3: [248, 64, 32, 255],
+const PALETTE = {
+  '.': null,
+  k: [24, 24, 32, 255],
+  w: [248, 248, 248, 255],
+  o: [248, 136, 56, 255],
+  O: [216, 80, 32, 255],
+  c: [248, 224, 168, 255],
+  y: [248, 216, 48, 255],
+  Y: [216, 160, 24, 255],
+  r: [248, 72, 48, 255],
+  R: [200, 40, 32, 255],
+  b: [88, 152, 248, 255],
+  B: [48, 96, 200, 255],
+  t: [184, 144, 96, 255],
+  T: [136, 96, 56, 255],
+  g: [104, 200, 88, 255],
+  G: [56, 144, 48, 255],
+  p: [248, 160, 176, 255],
+  n: [48, 80, 168, 255],
+  N: [32, 48, 120, 255],
+  s: [248, 200, 160, 255],
+  d: [72, 56, 48, 255],
+  m: [168, 184, 200, 255],
+  f: [248, 200, 64, 255],
+  F: [248, 120, 32, 255],
+}
+
+function drawPixelMap(canvas, rows, offsetX = 0, offsetY = 0) {
+  for (let y = 0; y < rows.length; y++) {
+    const row = rows[y]
+    for (let x = 0; x < row.length; x++) {
+      const color = PALETTE[row[x]]
+      if (color) canvas.set(offsetX + x, offsetY + y, color)
+    }
+  }
+}
+
+function writeSprite(filepath, drawFn, width = 64, height = 64) {
+  const canvas = createCanvas(width, height)
+  drawFn(canvas)
+  canvas.toPng(filepath)
 }
 
 function drawEllipse(canvas, cx, cy, rx, ry, color) {
@@ -185,179 +213,382 @@ function drawEllipse(canvas, cx, cy, rx, ry, color) {
   }
 }
 
-function writeSprite(filepath, drawFn, width = 64, height = 64) {
-  const canvas = createCanvas(width, height)
-  drawFn(canvas)
-  canvas.toPng(filepath)
-}
-
 function drawBattleBackground(filepath) {
+  // FireRed-style soft seafoam horizontal stripes + grass ovals
   const c = createCanvas(240, 160)
+  const stripeA = [216, 240, 224, 255]
+  const stripeB = [248, 252, 248, 255]
+  const stripeHeight = 3
 
-  for (let y = 0; y < 70; y++) {
-    const t = y / 70
-    const r = Math.floor(120 + t * 40)
-    const g = Math.floor(168 + t * 20)
-    const b = Math.floor(216 - t * 40)
-    c.fillRect(0, y, 240, 1, [r, g, b, 255])
+  for (let y = 0; y < 160; y++) {
+    const band = Math.floor(y / stripeHeight) % 2 === 0 ? stripeA : stripeB
+    c.fillRect(0, y, 240, 1, band)
   }
 
-  c.fillRect(0, 70, 240, 8, [200, 184, 136, 255])
-  for (let x = 0; x < 240; x += 16) {
-    c.fillRect(x, 72, 8, 6, [120, 104, 80, 255])
-  }
+  // Enemy grass platform (upper-right)
+  drawEllipse(c, 168, 68, 54, 16, [88, 176, 96, 255])
+  drawEllipse(c, 168, 66, 48, 12, [120, 200, 120, 255])
+  drawEllipse(c, 168, 64, 34, 7, [72, 152, 80, 255])
 
-  for (let y = 78; y < 160; y++) {
-    const t = (y - 78) / 82
-    const r = Math.floor(72 + t * 16)
-    const g = Math.floor(152 + t * 24)
-    const b = Math.floor(72 + t * 8)
-    c.fillRect(0, y, 240, 1, [r, g, b, 255])
-  }
-
-  drawEllipse(c, 120, 118, 90, 18, [96, 168, 80, 255])
-  drawEllipse(c, 120, 120, 78, 12, [72, 136, 64, 255])
-
-  for (let x = 0; x < 240; x += 12) {
-    c.set(x, 132 + (x % 24 === 0 ? 0 : 1), [56, 112, 48, 255])
-  }
-
-  for (let i = 0; i < 240; i += 8) {
-    c.fillRect(i, 40 + (i % 16), 4, 8, [88, 136, 96, 255])
-  }
+  // Player grass platform (lower-left)
+  drawEllipse(c, 64, 124, 62, 18, [88, 176, 96, 255])
+  drawEllipse(c, 64, 122, 54, 13, [120, 200, 120, 255])
+  drawEllipse(c, 64, 120, 38, 8, [72, 152, 80, 255])
 
   c.toPng(filepath)
 }
 
-function drawCharmander(canvas, back = false) {
-  const cx = 32
-  const cy = back ? 36 : 34
+// Compact 32x32 maps, then scaled 2x into 64x64 for crisp GBA look
+const CHARMANDER_FRONT = [
+  '............kk..............',
+  '..........kkookk............',
+  '.........kooooook...........',
+  '........koooooooook.........',
+  '.......koooooooooook........',
+  '......koooookkkooook........',
+  '......kooookwwkwoook........',
+  '......kooookkwkwoook........',
+  '......koooooooooook.........',
+  '.......koooooccoook.........',
+  '.......kooccccccook.........',
+  '........koccccccok..........',
+  '.......kkoooooookk..........',
+  '......koooooooooook.........',
+  '.....koooooooooooook........',
+  '....koooooooooooooook.......',
+  '...koooooooooooooooook......',
+  '...koooooooooooooooook......',
+  '....koooooooooooooook.......',
+  '.....koooooooooooook........',
+  '......kooookkkooook.........',
+  '.......kook..kook...........',
+  '........kk....kk............',
+  '.............kf.............',
+  '............kFfFk...........',
+  '...........kFffFfFk.........',
+  '..........kFffffffFk........',
+  '...........kFffffFk.........',
+  '............kFfFk...........',
+  '.............kf.............',
+  '............................',
+  '............................',
+]
 
-  if (back) {
-    drawEllipse(canvas, cx, cy + 4, 14, 12, C.orangeDark)
-    drawEllipse(canvas, cx, cy, 12, 10, C.orange)
-    drawEllipse(canvas, cx - 4, cy - 8, 6, 5, C.orange)
-    canvas.fillRect(cx + 8, cy + 2, 10, 4, C.orange)
-    drawEllipse(canvas, cx + 16, cy + 4, 4, 3, C.flame1)
-    drawEllipse(canvas, cx + 18, cy + 2, 3, 3, C.flame2)
-    canvas.set(cx + 19, cy, C.flame3)
-  } else {
-    drawEllipse(canvas, cx, cy + 2, 13, 11, C.orangeDark)
-    drawEllipse(canvas, cx, cy, 11, 9, C.orange)
-    drawEllipse(canvas, cx - 2, cy + 4, 7, 6, C.cream)
-    canvas.set(cx - 6, cy - 2, C.white)
-    canvas.set(cx - 5, cy - 2, C.black)
-    canvas.set(cx + 6, cy - 2, C.white)
-    canvas.set(cx + 7, cy - 2, C.black)
-    drawEllipse(canvas, cx + 12, cy + 6, 5, 4, C.flame1)
-    drawEllipse(canvas, cx + 14, cy + 4, 4, 4, C.flame2)
-    canvas.set(cx + 15, cy + 2, C.flame3)
-    canvas.set(cx + 16, cy + 1, C.flame3)
-  }
-}
+const CHARMANDER_BACK = [
+  '............kk..............',
+  '..........kkOOkk............',
+  '.........kOOOOOOk...........',
+  '........kOOOOOOOOk..........',
+  '.......kOOOOOOOOOOk.........',
+  '......kOOOOOOOOOOOOk........',
+  '......kOOOOOOOOOOOOk........',
+  '......kOOOOOOOOOOOOk........',
+  '.......kOOOOOOOOOOk.........',
+  '........kOOOOOOOOk..........',
+  '.......kkOOOOOOOOkk.........',
+  '......kOOOOOOOOOOOOk........',
+  '.....kOOOOOOOOOOOOOOk.......',
+  '....kOOOOOOOOOOOOOOOOk......',
+  '...kOOOOOOOOOOOOOOOOOOk.....',
+  '...kOOOOOOOOOOOOOOOOOOk.....',
+  '....kOOOOOOOOOOOOOOOOk......',
+  '.....kOOOOOOOOOOOOOOk.......',
+  '......kOOOOOkOOOOOOk........',
+  '.......kOOOk.kOOOOk.........',
+  '........kOk...kOk...........',
+  '.........k.....k............',
+  '..............kf............',
+  '.............kFfFk..........',
+  '............kFffFfFk........',
+  '...........kFffffffFk.......',
+  '............kFffffFk........',
+  '.............kFfFk..........',
+  '..............kf............',
+  '............................',
+  '............................',
+  '............................',
+]
 
-function drawSquirtle(canvas, back = false) {
-  const cx = 32
-  const cy = back ? 36 : 34
+const SQUIRTLE_FRONT = [
+  '.............kk.............',
+  '...........kkbbkk...........',
+  '..........kbbbbbbk..........',
+  '.........kbbbbbbbbk.........',
+  '........kbbbbbbbbbbk........',
+  '.......kbbbkkbbkkbbbk.......',
+  '.......kbbbkwwkwwkbbk.......',
+  '.......kbbbkkwkkwkbbk.......',
+  '.......kbbbbbbbbbbbbk.......',
+  '........kbbbccccbbbk........',
+  '........kbbccccccbbk........',
+  '.........kbccccccbk.........',
+  '........kktbbbbbbttk........',
+  '.......ktbbbbbbbbbbtk.......',
+  '......ktbbbbbbbbbbbbtk......',
+  '.....ktbbbbbbbbbbbbbbtk.....',
+  '....ktbbbbbbbbbbbbbbbbtk....',
+  '....ktbbbbbbbbbbbbbbbbtk....',
+  '.....ktbbbbbbbbbbbbbbtk.....',
+  '......ktbbbbbbbbbbbbtk......',
+  '.......ktbbbkktbbbtk........',
+  '........kttk..kttk..........',
+  '.........kk....kk...........',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+]
 
-  if (back) {
-    drawEllipse(canvas, cx, cy + 4, 14, 12, C.blueDark)
-    drawEllipse(canvas, cx, cy, 12, 10, C.blue)
-    drawEllipse(canvas, cx, cy - 6, 10, 8, C.brown)
-    canvas.fillRect(cx - 8, cy + 6, 16, 8, C.brown)
-  } else {
-    drawEllipse(canvas, cx, cy + 2, 13, 11, C.blueDark)
-    drawEllipse(canvas, cx, cy, 11, 9, C.blue)
-    drawEllipse(canvas, cx, cy - 4, 9, 7, C.cream)
-    canvas.set(cx - 5, cy - 2, C.white)
-    canvas.set(cx - 4, cy - 2, C.black)
-    canvas.set(cx + 5, cy - 2, C.white)
-    canvas.set(cx + 6, cy - 2, C.black)
-    drawEllipse(canvas, cx - 10, cy + 4, 4, 3, C.brown)
-    drawEllipse(canvas, cx + 10, cy + 4, 4, 3, C.brown)
-  }
-}
+const SQUIRTLE_BACK = [
+  '.............kk.............',
+  '...........kkBBkk...........',
+  '..........kBBBBBBk..........',
+  '.........kBBBBBBBBk.........',
+  '........kBBBBBBBBBBk........',
+  '.......kBBBBBBBBBBBBk.......',
+  '.......kBBBBBBBBBBBBk.......',
+  '.......kBBBBBBBBBBBBk.......',
+  '........kBBBBBBBBBBk........',
+  '.........kBBBBBBBBk.........',
+  '........kkTTTTTTTTkk........',
+  '.......kTTTTTTTTTTTTk.......',
+  '......kTTTTTTTTTTTTTTk......',
+  '.....kTTTTTTTTTTTTTTTTk.....',
+  '....kTTTTTTTTTTTTTTTTTTk....',
+  '....kTTTTTTTTTTTTTTTTTTk....',
+  '.....kTTTTTTTTTTTTTTTTk.....',
+  '......kTTTTTTTTTTTTTTk......',
+  '.......kTTTTkTTTTTTT........',
+  '........kTTk..kTTTk.........',
+  '.........kk....kk...........',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+]
 
-function drawBulbasaur(canvas, back = false) {
-  const cx = 32
-  const cy = back ? 36 : 34
+const BULBASAUR_FRONT = [
+  '..........kGggGGk...........',
+  '........kGgggggggGk.........',
+  '.......kGgggggggggGk........',
+  '......kGgggggggggggGk.......',
+  '.....kGggggkGGggggggGk......',
+  '.....kGgggk....kggggGk......',
+  '......kGggk....kgggGk.......',
+  '.......kggkkkkkkggk.........',
+  '.........kgggggggk..........',
+  '........kgggggggggk.........',
+  '.......kggkkggkkgggk........',
+  '......kggkrwkkrwkgggk.......',
+  '......kggkkwkkkwkgggk.......',
+  '......kggggggggggggk........',
+  '.......kgggccccgggk.........',
+  '........kggccccggk..........',
+  '.......kkggggggggkk.........',
+  '......kggggggggggggk........',
+  '.....kggggggggggggggk.......',
+  '....kggggggggggggggggk......',
+  '....kggggggggggggggggk......',
+  '.....kggggggggggggggk.......',
+  '......kgggk..kggggk.........',
+  '.......kggk..kgggk..........',
+  '........kk....kk............',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+]
 
-  if (back) {
-    drawEllipse(canvas, cx, cy + 6, 14, 10, C.greenDark)
-    drawEllipse(canvas, cx, cy, 12, 9, C.green)
-    drawEllipse(canvas, cx, cy - 8, 12, 8, C.green)
-    canvas.set(cx - 4, cy - 12, C.greenDark)
-    canvas.set(cx, cy - 14, C.green)
-    canvas.set(cx + 4, cy - 12, C.greenDark)
-  } else {
-    drawEllipse(canvas, cx, cy + 2, 13, 10, C.greenDark)
-    drawEllipse(canvas, cx, cy, 11, 8, C.green)
-    drawEllipse(canvas, cx, cy - 6, 10, 7, C.green)
-    drawEllipse(canvas, cx + 2, cy + 4, 6, 5, C.cream)
-    canvas.set(cx - 5, cy - 1, C.red)
-    canvas.set(cx + 5, cy - 1, C.red)
-    canvas.set(cx - 4, cy, C.black)
-    canvas.set(cx + 6, cy, C.black)
-    for (let i = -6; i <= 6; i += 3) {
-      canvas.set(cx + i, cy - 10, C.greenDark)
-      canvas.set(cx + i, cy - 12, C.green)
+const BULBASAUR_BACK = [
+  '..........kGGGGkk...........',
+  '........kGGGGGGGGk..........',
+  '.......kGGGGGGGGGGk.........',
+  '......kGGGGGGGGGGGGk........',
+  '.....kGGGGGGGGGGGGGGk.......',
+  '.....kGGGGGk..kGGGGGk.......',
+  '......kGGGGk..kGGGGk........',
+  '.......kGGkkkkkkGGk.........',
+  '.........kGGGGGGk...........',
+  '........kGGGGGGGGk..........',
+  '.......kGGGGGGGGGGk.........',
+  '......kGGGGGGGGGGGGk........',
+  '......kGGGGGGGGGGGGk........',
+  '.......kGGGGGGGGGGk.........',
+  '........kGGGGGGGGk..........',
+  '.......kkGGGGGGGGkk.........',
+  '......kGGGGGGGGGGGGk........',
+  '.....kGGGGGGGGGGGGGGk.......',
+  '....kGGGGGGGGGGGGGGGGk......',
+  '....kGGGGGGGGGGGGGGGGk......',
+  '.....kGGGGGGGGGGGGGGk.......',
+  '......kGGGk..kGGGGk.........',
+  '.......kGGk..kGGGk..........',
+  '........kk....kk............',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+]
+
+const PIKACHU_FRONT = [
+  '..k.........k...............',
+  '.kyk.......kyk..............',
+  '.kyyk.....kyyk..............',
+  '.kyyyk...kyyyk..............',
+  '..kyyyk.kyyyk...............',
+  '...kyyykyyyk................',
+  '....kyyyyyk.................',
+  '.....kyyyk..................',
+  '....kkyyykk.................',
+  '...kyyyyyyyk................',
+  '..kyyyyyyyyyk...............',
+  '.kyyykkkkkyyyk..............',
+  '.kyykwwkwwkyyk..............',
+  '.kyykkwkkwkyyk..............',
+  '.kyyyyyyyyyyyk..............',
+  '..kyypyyypyyk...............',
+  '...kyyyyyyyk................',
+  '....kyyyyyk.................',
+  '...kkyyyyykk................',
+  '..kyyyyyyyyyk...............',
+  '.kyyyyyyyyyyyk..............',
+  '.kyyyyyyyyyyyk..............',
+  '..kyyyykkyyyk...............',
+  '...kyyykkyyyk...............',
+  '....kyk..kyk................',
+  '.....k....k.................',
+  '...........kYYk.............',
+  '............kYYk............',
+  '.............kYYk...........',
+  '..............kYk...........',
+  '...............kk...........',
+  '............................',
+]
+
+const PIKACHU_BACK = [
+  '..k.........k...............',
+  '.kYk.......kYk..............',
+  '.kYYk.....kYYk..............',
+  '.kYYYk...kYYYk..............',
+  '..kYYYk.kYYYk...............',
+  '...kYYYYkYYk................',
+  '....kYYYYk..................',
+  '.....kYYYk..................',
+  '....kkYYYkk.................',
+  '...kYYYYYYYk................',
+  '..kYYYYYYYYYk...............',
+  '.kYYYYYYYYYYYk..............',
+  '.kYYYYYYYYYYYk..............',
+  '.kYYYYYYYYYYYk..............',
+  '..kYYYYYYYYYk...............',
+  '...kYYYYYYYk................',
+  '....kYYYYYk.................',
+  '...kkYYYYYkk................',
+  '..kYYYYYYYYYk...............',
+  '.kYYYYYYYYYYYk..............',
+  '.kYYYYYYYYYYYk..............',
+  '..kYYYYYYYYYk...............',
+  '...kYYYkkYYYk...............',
+  '....kYYk.kYYk...............',
+  '.....kk...kk................',
+  '...........kYYk.............',
+  '............kYYk............',
+  '.............kYYk...........',
+  '..............kYk...........',
+  '...............kk...........',
+  '............................',
+  '............................',
+]
+
+const TRAINER = [
+  '.........kkkkkk.............',
+  '.......kkddddddkk...........',
+  '......kddddddddddk..........',
+  '......kddddddddddk..........',
+  '.......kksssssskk...........',
+  '........kssssssk............',
+  '.......ksskkssssk...........',
+  '.......ksskkwsssk...........',
+  '.......kssssssssk...........',
+  '........kssssssk............',
+  '.........kkkkkk.............',
+  '.......kknnnnnnkk...........',
+  '......knnnnnnnnnnk..........',
+  '.....knnnnnnnnnnnnk.........',
+  '....knnnnnnnnnnnnnnk........',
+  '....knnnnnnnnnnnnnnk........',
+  '....knnkknnnnnnkknnk........',
+  '....knn..knnnnk..nnk........',
+  '....knn..knnnnk..nnk........',
+  '.....kk...knnk...kk.........',
+  '.........knnkk..............',
+  '........knn..nnk............',
+  '.......knn....nnk...........',
+  '......knn......nnk..........',
+  '......knn......nnk..........',
+  '......kk........kk..........',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+  '............................',
+]
+
+function scaleMap2x(rows) {
+  const out = []
+  for (const row of rows) {
+    let a = ''
+    let b = ''
+    for (const ch of row) {
+      a += ch + ch
+      b += ch + ch
     }
+    out.push(a, b)
   }
+  return out
 }
 
-function drawPikachu(canvas, back = false) {
-  const cx = 32
-  const cy = back ? 36 : 34
-
-  if (back) {
-    drawEllipse(canvas, cx, cy + 4, 14, 12, C.yellowDark)
-    drawEllipse(canvas, cx, cy, 12, 10, C.yellow)
-    canvas.fillRect(cx - 6, cy - 14, 4, 10, C.yellow)
-    canvas.fillRect(cx + 2, cy - 14, 4, 10, C.yellow)
-    canvas.fillRect(cx + 10, cy + 4, 8, 3, C.yellowDark)
-  } else {
-    drawEllipse(canvas, cx, cy + 2, 13, 11, C.yellowDark)
-    drawEllipse(canvas, cx, cy, 11, 9, C.yellow)
-    canvas.fillRect(cx - 12, cy - 10, 5, 12, C.yellow)
-    canvas.fillRect(cx + 7, cy - 10, 5, 12, C.yellow)
-    canvas.set(cx - 10, cy - 12, C.black)
-    canvas.set(cx + 9, cy - 12, C.black)
-    canvas.set(cx - 5, cy, C.black)
-    canvas.set(cx - 4, cy, C.white)
-    canvas.set(cx + 5, cy, C.black)
-    canvas.set(cx + 6, cy, C.white)
-    canvas.set(cx - 7, cy + 4, C.pink)
-    canvas.set(cx + 7, cy + 4, C.pink)
-    canvas.fillRect(cx + 10, cy + 6, 10, 4, C.yellowDark)
-    canvas.set(cx + 19, cy + 7, C.yellow)
-  }
-}
-
-function drawTrainer(canvas) {
-  const cx = 32
-  drawEllipse(canvas, cx, 18, 10, 9, C.skin)
-  canvas.fillRect(cx - 12, 14, 24, 6, C.black)
-  canvas.fillRect(cx - 10, 26, 20, 22, C.navy)
-  canvas.fillRect(cx - 8, 48, 8, 12, C.navy)
-  canvas.fillRect(cx, 48, 8, 12, C.navy)
-  canvas.fillRect(cx - 12, 28, 4, 16, C.navy)
-  canvas.fillRect(cx + 8, 28, 4, 16, C.navy)
-  canvas.set(cx - 4, 18, C.black)
-  canvas.set(cx + 4, 18, C.black)
+function drawMappedSprite(canvas, rows) {
+  const scaled = scaleMap2x(rows)
+  const mapW = scaled[0].length
+  const mapH = scaled.length
+  const ox = Math.floor((64 - mapW) / 2)
+  const oy = Math.floor((64 - mapH) / 2)
+  drawPixelMap(canvas, scaled, ox, oy)
 }
 
 function drawPokeball(canvas) {
-  drawEllipse(canvas, 8, 8, 7, 7, C.white)
-  canvas.fillRect(1, 7, 14, 2, C.black)
-  drawEllipse(canvas, 8, 4, 7, 4, C.red)
-  drawEllipse(canvas, 8, 8, 3, 3, C.white)
-  canvas.set(8, 8, C.black)
+  drawEllipse(canvas, 8, 8, 7, 7, PALETTE.w)
+  canvas.fillRect(1, 7, 14, 2, PALETTE.k)
+  drawEllipse(canvas, 8, 4, 7, 4, PALETTE.r)
+  drawEllipse(canvas, 8, 8, 3, 3, PALETTE.w)
+  canvas.set(8, 8, PALETTE.k)
 }
 
 function drawCursor(canvas) {
   for (let i = 0; i < 6; i++) {
-    canvas.set(i, 3 - Math.floor(i / 2), C.white)
-    canvas.set(i, 4 + Math.floor(i / 2), C.white)
+    canvas.set(i, 3 - Math.floor(i / 2), PALETTE.y)
+    canvas.set(i, 4 + Math.floor(i / 2), PALETTE.y)
   }
 }
 
@@ -368,8 +599,7 @@ function drawFlash(canvas) {
       const dy = y - 16
       const dist = Math.sqrt(dx * dx + dy * dy)
       if (dist < 14) {
-        const alpha = Math.floor((1 - dist / 14) * 200)
-        canvas.set(x, y, [255, 255, 255, alpha])
+        canvas.set(x, y, [255, 255, 255, Math.floor((1 - dist / 14) * 200)])
       }
     }
   }
@@ -379,9 +609,11 @@ function drawSparkle(canvas) {
   for (let i = 0; i < 8; i++) {
     const angle = (i / 8) * Math.PI * 2
     for (let r = 0; r < 12; r++) {
-      const x = Math.floor(16 + Math.cos(angle) * r)
-      const y = Math.floor(16 + Math.sin(angle) * r)
-      canvas.set(x, y, [248, 248, 120, 255 - r * 18])
+      canvas.set(
+        Math.floor(16 + Math.cos(angle) * r),
+        Math.floor(16 + Math.sin(angle) * r),
+        [248, 248, 120, 255 - r * 18],
+      )
     }
   }
   canvas.set(16, 16, [255, 255, 255, 255])
@@ -390,56 +622,94 @@ function drawSparkle(canvas) {
 function drawPlatform(canvas) {
   drawEllipse(canvas, 32, 20, 30, 8, [88, 136, 72, 255])
   drawEllipse(canvas, 32, 22, 24, 5, [64, 112, 56, 255])
+  drawEllipse(canvas, 32, 18, 20, 3, [120, 168, 96, 180])
 }
 
 function drawDialogFrame(canvas) {
-  canvas.fillRect(0, 0, 220, 44, C.white)
-  canvas.fillRect(2, 2, 216, 40, [240, 240, 248, 255])
+  canvas.fillRect(0, 0, 220, 44, PALETTE.w)
+  canvas.fillRect(2, 2, 216, 40, [248, 244, 224, 255])
   for (let i = 0; i < 220; i++) {
-    canvas.set(i, 0, C.black)
-    canvas.set(i, 43, C.black)
+    canvas.set(i, 0, PALETTE.k)
+    canvas.set(i, 1, PALETTE.k)
+    canvas.set(i, 42, PALETTE.k)
+    canvas.set(i, 43, PALETTE.k)
   }
   for (let i = 0; i < 44; i++) {
-    canvas.set(0, i, C.black)
-    canvas.set(219, i, C.black)
+    canvas.set(0, i, PALETTE.k)
+    canvas.set(1, i, PALETTE.k)
+    canvas.set(218, i, PALETTE.k)
+    canvas.set(219, i, PALETTE.k)
   }
-  canvas.fillRect(4, 4, 4, 4, C.black)
-  canvas.fillRect(212, 4, 4, 4, C.black)
-  canvas.fillRect(4, 36, 4, 4, C.black)
-  canvas.fillRect(212, 36, 4, 4, C.black)
+  canvas.fillRect(4, 4, 4, 4, PALETTE.k)
+  canvas.fillRect(212, 4, 4, 4, PALETTE.k)
+  canvas.fillRect(4, 36, 4, 4, PALETTE.k)
+  canvas.fillRect(212, 36, 4, 4, PALETTE.k)
 }
 
-ensureDir(spritesDir)
-ensureDir(audioDir)
+const FIRE_RED_BASE =
+  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-iii/firered-leafgreen'
 
-drawBattleBackground(path.join(spritesDir, 'battle-bg.png'))
-writeSprite(path.join(spritesDir, 'favicon.png'), drawPokeball, 32, 32)
-
-const starters = [
-  ['charmander', drawCharmander],
-  ['squirtle', drawSquirtle],
-  ['bulbasaur', drawBulbasaur],
+const OFFICIAL_SPRITES = [
+  ['starter-bulbasaur-front.png', `${FIRE_RED_BASE}/1.png`],
+  ['starter-bulbasaur-back.png', `${FIRE_RED_BASE}/back/1.png`],
+  ['starter-charmander-front.png', `${FIRE_RED_BASE}/4.png`],
+  ['starter-charmander-back.png', `${FIRE_RED_BASE}/back/4.png`],
+  ['starter-squirtle-front.png', `${FIRE_RED_BASE}/7.png`],
+  ['starter-squirtle-back.png', `${FIRE_RED_BASE}/back/7.png`],
+  ['pikachu-front.png', `${FIRE_RED_BASE}/25.png`],
+  ['pikachu-back.png', `${FIRE_RED_BASE}/back/25.png`],
 ]
 
-for (const [name, drawFn] of starters) {
-  writeSprite(path.join(spritesDir, `starter-${name}-front.png`), (c) => drawFn(c, false))
-  writeSprite(path.join(spritesDir, `starter-${name}-back.png`), (c) => drawFn(c, true))
+async function downloadOfficialSprites() {
+  for (const [filename, url] of OFFICIAL_SPRITES) {
+    const filepath = path.join(spritesDir, filename)
+    try {
+      const response = await fetch(url)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const buffer = Buffer.from(await response.arrayBuffer())
+      fs.writeFileSync(filepath, buffer)
+      console.log(`Downloaded ${filename}`)
+    } catch (error) {
+      console.warn(`Failed to download ${filename}, using procedural fallback:`, error.message)
+      if (filename.includes('charmander')) {
+        writeSprite(filepath, (c) => drawMappedSprite(c, filename.includes('back') ? CHARMANDER_BACK : CHARMANDER_FRONT))
+      } else if (filename.includes('squirtle')) {
+        writeSprite(filepath, (c) => drawMappedSprite(c, filename.includes('back') ? SQUIRTLE_BACK : SQUIRTLE_FRONT))
+      } else if (filename.includes('bulbasaur')) {
+        writeSprite(filepath, (c) => drawMappedSprite(c, filename.includes('back') ? BULBASAUR_BACK : BULBASAUR_FRONT))
+      } else if (filename.includes('pikachu')) {
+        writeSprite(filepath, (c) => drawMappedSprite(c, filename.includes('back') ? PIKACHU_BACK : PIKACHU_FRONT))
+      }
+    }
+  }
 }
 
-writeSprite(path.join(spritesDir, 'pikachu-front.png'), (c) => drawPikachu(c, false))
-writeSprite(path.join(spritesDir, 'pikachu-back.png'), (c) => drawPikachu(c, true))
-writeSprite(path.join(spritesDir, 'trainer-enemy.png'), drawTrainer)
-writeSprite(path.join(spritesDir, 'pokeball.png'), drawPokeball, 16, 16)
-writeSprite(path.join(spritesDir, 'cursor.png'), drawCursor, 8, 8)
-writeSprite(path.join(spritesDir, 'flash.png'), drawFlash, 32, 32)
-writeSprite(path.join(spritesDir, 'sparkle.png'), drawSparkle, 32, 32)
-writeSprite(path.join(spritesDir, 'platform.png'), drawPlatform)
-writeSprite(path.join(spritesDir, 'dialog-frame.png'), drawDialogFrame, 220, 44)
+async function main() {
+  ensureDir(spritesDir)
+  ensureDir(audioDir)
 
-writeWav(path.join(audioDir, 'sfx-select.wav'), 880, 0.08)
-writeWav(path.join(audioDir, 'sfx-attack.wav'), 440, 0.2)
-writeWav(path.join(audioDir, 'sfx-hit.wav'), 220, 0.25, 0.35)
-writeWav(path.join(audioDir, 'sfx-capture.wav'), 660, 0.5, 0.2)
-writeBattleBgm(path.join(audioDir, 'bgm-battle.wav'))
+  drawBattleBackground(path.join(spritesDir, 'battle-bg.png'))
+  writeSprite(path.join(spritesDir, 'favicon.png'), drawPokeball, 32, 32)
+  writeSprite(path.join(spritesDir, 'trainer-enemy.png'), (c) => drawMappedSprite(c, TRAINER))
+  writeSprite(path.join(spritesDir, 'pokeball.png'), drawPokeball, 16, 16)
+  writeSprite(path.join(spritesDir, 'cursor.png'), drawCursor, 8, 8)
+  writeSprite(path.join(spritesDir, 'flash.png'), drawFlash, 32, 32)
+  writeSprite(path.join(spritesDir, 'sparkle.png'), drawSparkle, 32, 32)
+  writeSprite(path.join(spritesDir, 'platform.png'), drawPlatform)
+  writeSprite(path.join(spritesDir, 'dialog-frame.png'), drawDialogFrame, 220, 44)
 
-console.log('Generated assets in public/assets/')
+  await downloadOfficialSprites()
+
+  writeWav(path.join(audioDir, 'sfx-select.wav'), 880, 0.08)
+  writeWav(path.join(audioDir, 'sfx-attack.wav'), 440, 0.2)
+  writeWav(path.join(audioDir, 'sfx-hit.wav'), 220, 0.25, 0.35)
+  writeWav(path.join(audioDir, 'sfx-capture.wav'), 660, 0.5, 0.2)
+  writeBattleBgm(path.join(audioDir, 'bgm-battle.wav'))
+
+  console.log('Generated assets in public/assets/')
+}
+
+main().catch((error) => {
+  console.error(error)
+  process.exit(1)
+})

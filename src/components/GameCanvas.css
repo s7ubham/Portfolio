@@ -1,44 +1,49 @@
 .game-shell {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background:
-    radial-gradient(circle at center, #1a1a2e 0%, #000000 70%);
-  padding: 12px;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  height: 100vh;
+  background: #000;
+  overflow: hidden;
 }
 
 .game-canvas {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 4px solid #303030;
-  box-shadow:
-    0 0 0 2px #6890f0,
-    0 0 32px rgba(104, 144, 240, 0.25),
-    inset 0 0 60px rgba(0, 0, 0, 0.5);
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   background: #000;
 }
 
-.game-canvas::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.08) 0px,
-    rgba(0, 0, 0, 0.08) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  opacity: 0.35;
-}
-
 .game-canvas canvas {
-  display: block;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: fill;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+.nintendo-copyright {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  padding: 6px 10px;
+  text-align: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(5px, 1.2vw, 7px);
+  line-height: 1.5;
+  color: rgba(220, 230, 240, 0.85);
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.72));
+  pointer-events: none;
+}
+
+@media (max-width: 480px) {
+  .nintendo-copyright {
+    font-size: 5px;
+    padding: 5px 8px;
+  }
 }

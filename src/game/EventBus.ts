@@ -4,8 +4,9 @@ import type { AttackType } from '@game-types/game'
 export const GAME_EVENTS = {
   SHOW_PROFILE_PANEL: 'show-profile-panel',
   PANEL_CLOSED: 'panel-closed',
-  PAUSE_BATTLE: 'pause-battle',
-  RESUME_BATTLE: 'resume-battle',
+  SHOW_NAME_ENTRY: 'show-name-entry',
+  NAME_CONFIRMED: 'name-confirmed',
+  SHOW_END_LINKS: 'show-end-links',
 } as const
 
 export interface ShowProfilePanelEvent {
@@ -14,6 +15,10 @@ export interface ShowProfilePanelEvent {
 
 export interface PanelClosedEvent {
   attackType: AttackType
+}
+
+export interface NameConfirmedEvent {
+  playerName: string
 }
 
 export const EventBus = new Events.EventEmitter()

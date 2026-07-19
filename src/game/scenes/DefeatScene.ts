@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { EventBus, GAME_EVENTS } from '@game/EventBus'
 import { GameRegistry } from '@game/GameRegistry'
 import { AudioManager } from '@game/systems/AudioManager'
 import { TypewriterDialog } from '@game/ui/DialogBox'
@@ -23,12 +24,12 @@ export class DefeatScene extends Phaser.Scene {
     this.add.image(120, 80, 'battle-bg').setDisplaySize(240, 160).setTint(0x888888)
 
     this.playerSprite = this.add
-      .image(56, 108, `starter-${starterId}-back`)
-      .setScale(1.4)
+      .image(56, 102, `starter-${starterId}-back`)
+      .setScale(1.9)
       .setAlpha(0.6)
 
-    this.pokeball = this.add.image(56, 60, 'pokeball').setScale(1.5).setVisible(false)
-    this.sparkle = this.add.image(56, 108, 'sparkle').setVisible(false)
+    this.pokeball = this.add.image(56, 56, 'pokeball').setScale(1.5).setVisible(false)
+    this.sparkle = this.add.image(56, 102, 'sparkle').setVisible(false)
 
     this.dialog = new TypewriterDialog(this, 120, 132, 220, 36)
 
@@ -45,7 +46,7 @@ export class DefeatScene extends Phaser.Scene {
 
     this.tweens.add({
       targets: this.pokeball,
-      y: 108,
+      y: 102,
       duration: 400,
       ease: 'Quad.easeIn',
       onComplete: () => {
@@ -77,19 +78,26 @@ export class DefeatScene extends Phaser.Scene {
       `Subham caught ${GameRegistry.getPlayerName()}'s ${STARTER_NAMES[starterId]}!`,
       () => {
         this.dialog.showMessage("Thanks for visiting Subham's portfolio!", () => {
-          this.add
-            .text(120, 80, 'THE END', {
+          const endText = this.add
+            .text(120, 70, 'THE END', {
               fontFamily: '"Press Start 2P", monospace',
               fontSize: '16px',
               color: '#f8f878',
+              stroke: '#202020',
+              strokeThickness: 4,
             })
             .setOrigin(0.5)
             .setAlpha(0)
 
           this.tweens.add({
-            targets: this.children.list[this.children.list.length - 1],
+            targets: endText,
             alpha: 1,
-            duration: 1200,
+            duration: 900,
+            onComplete: () => {
+              this.time.delayedCall(700, () => {
+                EventBus.emit(GAME_EVENTS.SHOW_END_LINKS)
+              })
+            },
           })
         })
       },

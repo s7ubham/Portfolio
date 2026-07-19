@@ -4,7 +4,6 @@ export class HPBar {
   private scene: Phaser.Scene
   private container: Phaser.GameObjects.Container
   private fill: Phaser.GameObjects.Rectangle
-  private label: Phaser.GameObjects.Text
   private maxWidth: number
   private currentHP = 100
 
@@ -18,16 +17,17 @@ export class HPBar {
     this.scene = scene
     this.maxWidth = width - 4
 
-    const frame = scene.add.rectangle(0, 0, width, 10, 0x404040)
-    const inner = scene.add.rectangle(0, 0, width - 2, 8, 0x202020)
-    this.fill = scene.add.rectangle(-this.maxWidth / 2, 0, this.maxWidth, 6, 0x58d058).setOrigin(0, 0.5)
-    this.label = scene.add.text(-width / 2, -14, labelText, {
+    const label = scene.add.text(-width / 2, -8, labelText, {
       fontFamily: '"Press Start 2P", monospace',
-      fontSize: '6px',
-      color: '#f8f8f8',
+      fontSize: '5px',
+      color: '#e05050',
     })
 
-    this.container = scene.add.container(x, y, [frame, inner, this.fill, this.label])
+    const frame = scene.add.rectangle(8, 0, width, 8, 0x404040)
+    const inner = scene.add.rectangle(8, 0, width - 2, 5, 0xf8f8f8)
+    this.fill = scene.add.rectangle(8 - this.maxWidth / 2, 0, this.maxWidth, 4, 0x58d058).setOrigin(0, 0.5)
+
+    this.container = scene.add.container(x, y, [label, frame, inner, this.fill])
     this.updateColor()
   }
 

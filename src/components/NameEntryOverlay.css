@@ -1,0 +1,133 @@
+.name-entry-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.82);
+  padding: 12px;
+}
+
+.name-entry-window {
+  width: min(420px, 96vw);
+  background: #f4f0e0;
+  border: 4px solid #202020;
+  box-shadow:
+    0 0 0 3px #6890f0,
+    8px 8px 0 rgba(0, 0, 0, 0.45);
+  font-family: 'Press Start 2P', monospace;
+  padding: 16px 12px 14px;
+}
+
+.name-entry-header {
+  text-align: center;
+  font-size: 11px;
+  color: #202020;
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+
+.name-entry-display {
+  min-height: 44px;
+  background: #202830;
+  border: 3px solid #101418;
+  color: #f8f878;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 14px;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  padding: 10px;
+  box-shadow: inset 0 0 0 2px #405060;
+}
+
+.name-entry-placeholder {
+  color: #8898a8;
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+
+.name-entry-caret {
+  color: #f8f878;
+  animation: name-caret 1s steps(1) infinite;
+}
+
+@keyframes name-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.name-entry-error {
+  text-align: center;
+  color: #f85858;
+  font-size: 8px;
+  margin-bottom: 10px;
+}
+
+.name-entry-keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.name-entry-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.name-entry-key {
+  min-width: 32px;
+  min-height: 40px;
+  padding: 8px 6px;
+  background: #6890f0;
+  border: 2px solid #203868;
+  color: #f8f8f8;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #203868;
+  touch-action: manipulation;
+}
+
+.name-entry-key:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #203868;
+}
+
+.name-entry-key--wide {
+  min-width: 72px;
+  background: #787878;
+  border-color: #404040;
+  box-shadow: 2px 2px 0 #404040;
+  font-size: 8px;
+}
+
+.name-entry-key--ok {
+  min-width: 72px;
+  background: #58d058;
+  border-color: #307030;
+  box-shadow: 2px 2px 0 #307030;
+  font-size: 10px;
+}
+
+@media (max-width: 420px) {
+  .name-entry-key {
+    min-width: 28px;
+    min-height: 38px;
+    font-size: 9px;
+  }
+
+  .name-entry-header {
+    font-size: 9px;
+  }
+
+  .name-entry-display {
+    font-size: 12px;
+  }
+}

@@ -1,16 +1,11 @@
 import Phaser from 'phaser'
+import { EventBus, GAME_EVENTS, type NameConfirmedEvent } from '@game/EventBus'
 import { GameRegistry } from '@game/GameRegistry'
-import { TypewriterDialog } from '@game/ui/DialogBox'
 import { AudioManager } from '@game/systems/AudioManager'
 
-const MAX_NAME_LENGTH = 10
-
 export class NameEntryScene extends Phaser.Scene {
-  private dialog!: TypewriterDialog
-  private nameText!: Phaser.GameObjects.Text
-  private playerName = ''
   private audio!: AudioManager
-  private confirmed = false
+  private nameListener?: (payload: NameConfirmedEvent) => void
 
   constructor() {
     super('NameEntryScene')
@@ -21,67 +16,33 @@ export class NameEntryScene extends Phaser.Scene {
     this.audio = new AudioManager(this)
 
     this.add.image(120, 80, 'battle-bg').setDisplaySize(240, 160)
-
-    this.dialog = new TypewriterDialog(this, 120, 120, 220, 36)
-    this.dialog.showMessage("What's your name?")
-
-    this.nameText = this.add
-      .text(120, 96, '', {
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: '10px',
-        color: '#f8f8f8',
-        backgroundColor: '#303030',
-        padding: { x: 6, y: 4 },
-      })
-      .setOrigin(0.5)
+    this.add.rectangle(120, 80, 240, 160, 0x000000, 0.35)
 
     this.add
-      .text(120, 148, 'TYPE NAME + PRESS ENTER', {
+      .text(120, 72, "ENTER YOUR NAME", {
         fontFamily: '"Press Start 2P", monospace',
-        fontSize: '5px',
-        color: '#f8f8f8',
+        fontSize: '8px',
+        color: '#f8f878',
+        stroke: '#202020',
+        strokeThickness: 3,
       })
       .setOrigin(0.5)
 
-    this.input.keyboard?.on('keydown', this.handleKeyDown, this)
-  }
-
-  private handleKeyDown(event: KeyboardEvent): void {
-    if (this.confirmed) return
-
-    this.audio.unlock()
-
-    if (event.key === 'Enter') {
-      if (this.playerName.trim().length === 0) {
-        this.dialog.showMessage('Please enter a name!')
-        return
-      }
-
-      this.confirmed = true
-      GameRegistry.set({ playerName: this.playerName.trim() })
+    this.nameListener = (payload) => {
+      this.audio.unlock()
+      this.audio.ensureBgm()
       this.audio.playSelect()
-      this.dialog.showMessage(`Right! So your name is ${this.playerName.trim()}!`, () => {
-        this.time.delayedCall(600, () => this.scene.start('StarterSelectScene'))
-      })
-      return
+      GameRegistry.set({ playerName: payload.playerName })
+      this.scene.start('StarterSelectScene')
     }
 
-    if (event.key === 'Backspace') {
-      this.playerName = this.playerName.slice(0, -1)
-      this.nameText.setText(this.playerName)
-      this.audio.playSelect()
-      return
-    }
-
-    if (event.key.length === 1 && /^[a-zA-Z0-9 ]$/.test(event.key)) {
-      if (this.playerName.length >= MAX_NAME_LENGTH) return
-      this.playerName += event.key.toUpperCase()
-      this.nameText.setText(this.playerName)
-      this.audio.playSelect()
-    }
+    EventBus.on(GAME_EVENTS.NAME_CONFIRMED, this.nameListener)
+    EventBus.emit(GAME_EVENTS.SHOW_NAME_ENTRY)
   }
 
   shutdown(): void {
-    this.input.keyboard?.off('keydown', this.handleKeyDown, this)
+    if (this.nameListener) {
+      EventBus.off(GAME_EVENTS.NAME_CONFIRMED, this.nameListener)
+    }
   }
 }

@@ -37,20 +37,19 @@ function generateBattleBackground(scene: Phaser.Scene): void {
   const g = scene.make.graphics({ x: 0, y: 0 })
 
   for (let y = 0; y < 160; y++) {
-    const t = y / 160
-    const r = Math.floor(72 + t * 40)
-    const gr = Math.floor(112 + t * 48)
-    const b = Math.floor(96 + t * 16)
-    g.fillStyle(Phaser.Display.Color.GetColor(r, gr, b), 1)
+    const band = Math.floor(y / 3) % 2 === 0
+    g.fillStyle(band ? 0xd8f0e0 : 0xf8fcf8, 1)
     g.fillRect(0, y, 240, 1)
   }
 
-  g.fillStyle(0xc8b888, 1)
-  g.fillRect(0, 70, 240, 24)
-  g.fillStyle(0x589848, 1)
-  g.fillRect(0, 94, 240, 66)
-  g.fillStyle(0x487838, 1)
-  g.fillEllipse(120, 118, 160, 36)
+  g.fillStyle(0x58b060, 1)
+  g.fillEllipse(168, 68, 108, 32)
+  g.fillStyle(0x78c878, 1)
+  g.fillEllipse(168, 66, 96, 24)
+  g.fillStyle(0x58b060, 1)
+  g.fillEllipse(64, 124, 124, 36)
+  g.fillStyle(0x78c878, 1)
+  g.fillEllipse(64, 122, 108, 26)
 
   g.generateTexture('battle-bg', 240, 160)
   g.destroy()

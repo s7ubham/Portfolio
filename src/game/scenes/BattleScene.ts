@@ -26,6 +26,7 @@ export class BattleScene extends Phaser.Scene {
   private enemySprite!: Phaser.GameObjects.Image
   private pendingAttack: AttackType | null = null
   private panelListener?: (...args: unknown[]) => void
+  private menuPanel?: Phaser.GameObjects.Rectangle
 
   constructor() {
     super('BattleScene')
@@ -38,57 +39,67 @@ export class BattleScene extends Phaser.Scene {
     this.selectedMenuIndex = 0
     this.audio = new AudioManager(this)
     this.audio.unlock()
+    this.audio.ensureBgm()
 
     const { starterId, playerName } = GameRegistry.get()
 
     this.add.image(120, 80, 'battle-bg').setDisplaySize(240, 160)
 
-    this.add.image(168, 58, 'platform').setScale(0.9).setAlpha(0.85)
-    this.add.image(56, 114, 'platform').setScale(0.85).setAlpha(0.85)
+    // Enemy Pokémon on upper-right grass oval
+    this.enemySprite = this.add.image(168, 52, 'pikachu-front').setScale(1.85)
 
-    this.add.image(180, 36, 'trainer-enemy').setScale(1.3)
-    this.enemySprite = this.add.image(168, 52, 'pikachu-front').setScale(1.5)
-
+    // Player Pokémon on lower-left grass oval
     this.playerSprite = this.add
       .image(56, 108, `starter-${starterId}-back`)
-      .setScale(1.6)
+      .setScale(2)
+
+    // FireRed-style beige enemy status box (top-left)
+    this.add.rectangle(62, 28, 112, 34, 0xf8f0d8)
+    this.add.rectangle(62, 28, 112, 34).setStrokeStyle(3, 0x585868)
 
     this.add
-      .text(148, 18, 'SUBHAM', {
+      .text(16, 16, 'SUBHAM', {
         fontFamily: '"Press Start 2P", monospace',
         fontSize: '6px',
-        color: '#f8f8f8',
+        color: '#202020',
       })
-      .setOrigin(0.5)
 
     this.add
-      .text(148, 26, 'PIKACHU', {
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: '5px',
-        color: '#f8f8f8',
-      })
-      .setOrigin(0.5)
-
-    this.add
-      .text(56, 82, playerName.toUpperCase(), {
+      .text(16, 26, 'PIKACHU', {
         fontFamily: '"Press Start 2P", monospace',
         fontSize: '6px',
-        color: '#f8f8f8',
+        color: '#202020',
       })
-      .setOrigin(0.5)
 
     this.add
-      .text(56, 90, STARTER_NAMES[starterId].toUpperCase(), {
+      .text(100, 26, 'Lv50', {
+        fontFamily: '"Press Start 2P", monospace',
+        fontSize: '6px',
+        color: '#202020',
+      })
+
+    // Player status box (mid-right)
+    this.add.rectangle(168, 88, 120, 42, 0xf8f0d8)
+    this.add.rectangle(168, 88, 120, 42).setStrokeStyle(3, 0x585868)
+
+    this.add
+      .text(116, 72, playerName.toUpperCase().slice(0, 8), {
+        fontFamily: '"Press Start 2P", monospace',
+        fontSize: '6px',
+        color: '#202020',
+      })
+
+    this.add
+      .text(116, 82, STARTER_NAMES[starterId].toUpperCase().slice(0, 10), {
         fontFamily: '"Press Start 2P", monospace',
         fontSize: '5px',
-        color: '#f8f8f8',
+        color: '#202020',
       })
-      .setOrigin(0.5)
 
-    this.hpBar = new HPBar(this, 56, 98, 70, 'HP')
+    this.hpBar = new HPBar(this, 168, 98, 78, 'HP')
     this.hpBar.setHP(100, false)
 
-    this.dialog = new TypewriterDialog(this, 120, 132, 220, 36)
+    this.dialog = new TypewriterDialog(this, 120, 138, 228, 40)
 
     this.createAttackMenu()
     this.hideAttackMenu()
@@ -105,15 +116,22 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private createAttackMenu(): void {
+    this.menuPanel = this.add.rectangle(168, 132, 130, 50, 0xf8f8f8)
+    this.menuPanel.setStrokeStyle(3, 0x483878)
+    this.menuPanel.setDepth(5)
+
     const attacks = this.battleSystem.getAvailableAttacks()
 
     attacks.forEach((attack, index) => {
+      const col = index % 2
+      const row = Math.floor(index / 2)
       const text = this.add
-        .text(130, 108 + index * 12, ATTACK_LABELS[attack], {
+        .text(118 + col * 58, 118 + row * 14, ATTACK_LABELS[attack], {
           fontFamily: '"Press Start 2P", monospace',
-          fontSize: '7px',
-          color: '#f8f8f8',
+          fontSize: '6px',
+          color: '#202020',
         })
+        .setDepth(6)
         .setInteractive({ useHandCursor: true })
         .on('pointerdown', () => {
           if (this.phase !== 'menu') return
@@ -125,34 +143,16 @@ export class BattleScene extends Phaser.Scene {
       this.menuItems.push(text)
     })
 
-    this.menuCursor = this.add.image(118, 112, 'cursor')
+    this.menuCursor = this.add.image(110, 122, 'cursor').setDepth(6)
   }
 
   private refreshAttackMenu(): void {
     this.menuItems.forEach((item) => item.destroy())
     this.menuItems = []
     this.menuCursor?.destroy()
+    this.menuPanel?.destroy()
 
-    const attacks = this.battleSystem.getAvailableAttacks()
-    attacks.forEach((attack, index) => {
-      const text = this.add
-        .text(130, 108 + index * 12, ATTACK_LABELS[attack], {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: '7px',
-          color: '#f8f8f8',
-        })
-        .setInteractive({ useHandCursor: true })
-        .on('pointerdown', () => {
-          if (this.phase !== 'menu') return
-          this.selectedMenuIndex = index
-          this.updateMenuCursor()
-          this.selectAttack()
-        })
-
-      this.menuItems.push(text)
-    })
-
-    this.menuCursor = this.add.image(118, 112, 'cursor')
+    this.createAttackMenu()
     this.selectedMenuIndex = 0
     this.updateMenuCursor()
   }
@@ -162,12 +162,14 @@ export class BattleScene extends Phaser.Scene {
     this.refreshAttackMenu()
     this.menuItems.forEach((item) => item.setVisible(true))
     this.menuCursor.setVisible(true)
+    this.menuPanel?.setVisible(true)
     this.dialog.showMessage('What will you do?')
   }
 
   private hideAttackMenu(): void {
     this.menuItems.forEach((item) => item.setVisible(false))
     this.menuCursor?.setVisible(false)
+    this.menuPanel?.setVisible(false)
   }
 
   private handleKeyDown(event: KeyboardEvent): void {
@@ -175,11 +177,11 @@ export class BattleScene extends Phaser.Scene {
 
     const attacks = this.battleSystem.getAvailableAttacks()
 
-    if (event.key === 'ArrowUp') {
+    if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
       this.selectedMenuIndex = (this.selectedMenuIndex - 1 + attacks.length) % attacks.length
       this.updateMenuCursor()
       this.audio.playSelect()
-    } else if (event.key === 'ArrowDown') {
+    } else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
       this.selectedMenuIndex = (this.selectedMenuIndex + 1) % attacks.length
       this.updateMenuCursor()
       this.audio.playSelect()
@@ -189,7 +191,10 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private updateMenuCursor(): void {
-    this.menuCursor.y = 108 + this.selectedMenuIndex * 12 + 4
+    const col = this.selectedMenuIndex % 2
+    const row = Math.floor(this.selectedMenuIndex / 2)
+    this.menuCursor.x = 110 + col * 58
+    this.menuCursor.y = 122 + row * 14
   }
 
   private selectAttack(): void {
@@ -244,6 +249,7 @@ export class BattleScene extends Phaser.Scene {
     this.scene.resume()
     this.phase = 'counter'
     const attackType = this.pendingAttack
+    this.audio.ensureBgm()
 
     this.dialog.showMessage("Subham's Pikachu used Counter!", () => {
       this.playCounterAnimation(() => {

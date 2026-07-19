@@ -5,13 +5,14 @@ import { StarterSelectScene } from '@game/scenes/StarterSelectScene'
 import { BattleScene } from '@game/scenes/BattleScene'
 import { DefeatScene } from '@game/scenes/DefeatScene'
 import { GAME_HEIGHT, GAME_WIDTH } from '@game-types/game'
+import { resetAudioState } from '@game/systems/AudioManager'
 
 let gameInstance: Phaser.Game | null = null
+let resizeHandler: (() => void) | null = null
 
 export function createGame(parent: HTMLElement): Phaser.Game {
   if (gameInstance) {
-    gameInstance.destroy(true)
-    gameInstance = null
+    destroyGame()
   }
 
   gameInstance = new Phaser.Game({
@@ -19,7 +20,7 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     parent,
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
-    backgroundColor: '#000000',
+    backgroundColor: '#d8f0e0',
     pixelArt: true,
     roundPixels: true,
     scale: {
@@ -27,7 +28,8 @@ export function createGame(parent: HTMLElement): Phaser.Game {
       autoCenter: Phaser.Scale.CENTER_BOTH,
       width: GAME_WIDTH,
       height: GAME_HEIGHT,
-      zoom: 1,
+      parent,
+      expandParent: true,
     },
     scene: [BootScene, NameEntryScene, StarterSelectScene, BattleScene, DefeatScene],
     audio: {
@@ -35,10 +37,25 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     },
   })
 
+  resizeHandler = () => {
+    gameInstance?.scale.refresh()
+  }
+  window.addEventListener('resize', resizeHandler)
+  window.addEventListener('orientationchange', resizeHandler)
+  requestAnimationFrame(() => gameInstance?.scale.refresh())
+
   return gameInstance
 }
 
 export function destroyGame(): void {
+  if (resizeHandler) {
+    window.removeEventListener('resize', resizeHandler)
+    window.removeEventListener('orientationchange', resizeHandler)
+    resizeHandler = null
+  }
+
+  resetAudioState()
+
   if (gameInstance) {
     gameInstance.destroy(true)
     gameInstance = null
